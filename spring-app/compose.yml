@@ -1,0 +1,27 @@
+services:
+  oracle-db:
+    image: gvenzl/oracle-free:latest  # Oracle Database Free (alternativa oficial e leve)
+    container_name: oracle-db
+    environment:
+      ORACLE_PASSWORD: oracle            # senha do usuário SYS e SYSTEM
+      APP_USER: appuser                  # cria usuário extra para a aplicação
+      APP_USER_PASSWORD: apppass
+    ports:
+      - "1521:1521"                      # porta do Oracle
+    volumes:
+      - oracle-data:/opt/oracle/oradata  # persiste os dados
+
+  spring-app:
+    build: ./spring-app                  # pasta com o Dockerfile da sua aplicação
+    container_name: spring-app
+    depends_on:
+      - oracle-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@oracle-db:1521/FREEPDB1
+      SPRING_DATASOURCE_USERNAME: appuser
+      SPRING_DATASOURCE_PASSWORD: apppass
+    ports:
+      - "8080:8080"
+
+volumes:
+  oracle-data:
