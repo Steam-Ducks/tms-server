@@ -25,4 +25,44 @@ public class SpeedRecord {
 
     @Column(name = "VEHICLE_TYPE")
     private String vehicleType;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getCameraId() {
+        return cameraId;
+    }
+
+    public void setCameraId(Long cameraId) {
+        this.cameraId = cameraId;
+    }
+
+    public BigDecimal getSpeed() {
+        return speed;
+    }
+
+    public void setSpeed(BigDecimal speed) {
+        this.speed = speed;
+    }
+
+    public OffsetDateTime getTime() {
+        return time;
+    }
+
+    public void setTime(OffsetDateTime time) {
+        this.time = time;
+    }
+
+    public String getVehicleType() {
+        return vehicleType;
+    }
+
+    public void setVehicleType(String vehicleType) {
+        this.vehicleType = vehicleType;
+    }
 }
