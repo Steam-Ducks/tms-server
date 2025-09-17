@@ -1,7 +1,17 @@
+package org.example.tmsserver.entity;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.JoinColumn;
+
+import java.util.List;
+
 @Entity
 public class Camera {
     @Id
-    private Long idCamera;
+    private String idCamera;
 
     private String latitude;
     private String longitude;

@@ -1,3 +1,9 @@
+package org.example.tmsserver.entity;
+
+import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
+
 @Entity
 @IdClass(RegionIndicatorId.class)
 public class RegionIndicator {

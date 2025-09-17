@@ -1,3 +1,7 @@
+package org.example.tmsserver.entity;
+
+import jakarta.persistence.*;
+
 @Entity
 public class User {
     @Id

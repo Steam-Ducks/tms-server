@@ -1,3 +1,9 @@
+package org.example.tmsserver.entity;
+
+import jakarta.persistence.*;
+
+import java.util.List;
+
 @Entity
 public class Role {
     @Id
