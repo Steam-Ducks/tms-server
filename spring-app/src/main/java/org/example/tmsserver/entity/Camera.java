@@ -11,8 +11,13 @@ public class Camera {
     @Column(name = "id_camera")
     private String idCamera;
 
+    @Column(name = "latitude")
     private String latitude;
+
+    @Column(name = "longitude")
     private String longitude;
+
+    @Column(name = "bairro")
     private String bairro;
 
     @Column(name = "speed_limit")
@@ -25,10 +30,8 @@ public class Camera {
     @OneToMany(mappedBy = "camera")
     private List<SpeedRecord> speedRecords;
 
-    // Construtor vazio
     public Camera() {}
 
-    // Construtor completo
     public Camera(String idCamera, String latitude, String longitude, String bairro, Integer speedLimit, Region region, List<SpeedRecord> speedRecords) {
         this.idCamera = idCamera;
         this.latitude = latitude;

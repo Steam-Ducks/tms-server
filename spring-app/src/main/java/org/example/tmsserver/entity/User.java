@@ -18,7 +18,7 @@ public class User {
     @Column(name="email", unique = true)
     private String email;
 
-    @Column(unique = true, name = "phone_number")
+    @Column(name = "phone_number", columnDefinition = "CHAR(10)")
     private String phoneNumber;
 
     public User() {
