@@ -1,7 +1,9 @@
 package org.example.tmsserver.service;
 
 import org.example.tmsserver.dto.RadarApiResponse;
+import org.example.tmsserver.entity.Camera;
 import org.example.tmsserver.entity.SpeedRecord;
+import org.example.tmsserver.repository.CameraRepository;
 import org.example.tmsserver.repository.SpeedRecordRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpServerErrorException;
@@ -16,15 +18,17 @@ import java.util.List;
 @Service
 public class SpeedRecordService {
 
-    private final SpeedRecordRepository repository;
+    private final SpeedRecordRepository speedRecordRepository;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final CameraRepository cameraRepository;
 
-    public SpeedRecordService(SpeedRecordRepository repository) {
-        this.repository = repository;
+    public SpeedRecordService(SpeedRecordRepository speedRecordRepository, CameraRepository cameraRepository) {
+        this.speedRecordRepository = speedRecordRepository;
+        this.cameraRepository = cameraRepository;
     }
 
     public void clearSpeedRecords() {
-        repository.deleteAllRecords();
+        speedRecordRepository.deleteAllRecords();
     }
 
     public void fetchAndSaveSpeedRecords() {
@@ -43,19 +47,29 @@ public class SpeedRecordService {
             RadarApiResponse response = restTemplate.getForObject(url, RadarApiResponse.class);
 
             if (response != null && response.getData() != null) {
-                List<SpeedRecord> records = response.getData().stream().map(d -> {
-                    SpeedRecord r = new SpeedRecord();
-                    r.setCameraId(Long.parseLong(d.getCameraNumero().replaceAll("\\D", "")));
-                    r.setSpeed(BigDecimal.valueOf(d.getVelocidade()));
-                    r.setVehicleType(d.getTipoVeiculo());
+                List<SpeedRecord> records = response.getData().stream()
+                        .map(d -> {
 
-                    LocalDateTime ldt = LocalDateTime.parse(d.getDataHoraTz());
-                    r.setTime(ldt.atOffset(ZoneOffset.ofHours(-3))); // ajusta para seu fuso, ex: -3h
+                            String cameraId = d.getCameraNumero().trim();
+                            Camera camera = cameraRepository.findById(cameraId).orElse(null);
+                            if (camera == null) {
+                                System.err.println("Câmera não encontrada: " + cameraId);
+                                return null;
+                            }
 
-                    return r;
-                }).toList();
+                            SpeedRecord r = new SpeedRecord();
+                            r.setCamera(camera);
+                            r.setSpeed(BigDecimal.valueOf(d.getVelocidade()));
+                            r.setVehicleType(d.getTipoVeiculo());
+                            LocalDateTime ldt = LocalDateTime.parse(d.getDataHoraTz());
+                            r.setTime(ldt.atOffset(ZoneOffset.ofHours(-3)));
+                            return r;
 
-                repository.saveAll(records);
+                        })
+                        .filter(r -> r != null)
+                        .toList();
+
+                speedRecordRepository.saveAll(records);
             }
 
         } catch (HttpServerErrorException e) {
@@ -66,4 +80,13 @@ public class SpeedRecordService {
         }
     }
 
+    public void exemploUso(Long regionId) {
+        List<SpeedRecord> registros = speedRecordRepository.findAllByRegionId(regionId);
+
+        registros.forEach(r -> {
+            System.out.println(r.getId() + " - " + r.getSpeed() + " km/h - " + r.getVehicleType()
+                    + " - Camera: " + r.getCamera().getIdCamera()
+                    + " - Região: " + r.getCamera().getRegion().getName());
+        });
+    }
 }

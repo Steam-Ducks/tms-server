@@ -14,18 +14,29 @@ public class SpeedRecord {
     @Column(name = "ID_SPEED_RECORD")
     private Long id;
 
-    @Column(name = "ID_CAMERA")
-    private Long cameraId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ID_CAMERA", nullable = false)
+    private Camera camera;
 
-    @Column(name = "SPEED")
+    @Column(name = "SPEED", precision = 38, scale = 2)
     private BigDecimal speed;
 
     @Column(name = "TIME")
     private OffsetDateTime time;
 
-    @Column(name = "VEHICLE_TYPE")
+    @Column(name = "VEHICLE_TYPE", length = 255)
     private String vehicleType;
 
+    public SpeedRecord() {}
+
+    public SpeedRecord(Camera camera, BigDecimal speed, OffsetDateTime time, String vehicleType) {
+        this.camera = camera;
+        this.speed = speed;
+        this.time = time;
+        this.vehicleType = vehicleType;
+    }
+
+    // Getters e Setters
     public Long getId() {
         return id;
     }
@@ -34,12 +45,12 @@ public class SpeedRecord {
         this.id = id;
     }
 
-    public Long getCameraId() {
-        return cameraId;
+    public Camera getCamera() {
+        return camera;
     }
 
-    public void setCameraId(Long cameraId) {
-        this.cameraId = cameraId;
+    public void setCamera(Camera camera) {
+        this.camera = camera;
     }
 
     public BigDecimal getSpeed() {

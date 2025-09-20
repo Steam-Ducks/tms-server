@@ -13,8 +13,8 @@ public class SpeedDataImportJob {
         this.speedRecordService = speedRecordService;
     }
 
-    //Para teste, remova 0 /10 e deixe assim cron = "0 * * * * *" para repetir a cada minuto
-    @Scheduled(cron = "0 */10 * * * *")
+    //Para teste, remova o /10 e deixe assim cron = "0 * * * * *" para repetir a cada minuto
+    @Scheduled(cron = "0 * * * * *")
     public void execute() {
         speedRecordService.clearSpeedRecords();
         speedRecordService.fetchAndSaveSpeedRecords();
