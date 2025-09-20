@@ -12,7 +12,7 @@ public class Level {
     private Long idLevel;
 
     @Column(name = "value")
-    private Double value;
+    private float value;
 
     @Column(name = "time")
     private LocalDateTime time;
@@ -23,7 +23,7 @@ public class Level {
 
     public Level() {}
 
-    public Level(Long idLevel, Double value, LocalDateTime time, Region region) {
+    public Level(Long idLevel, float value, LocalDateTime time, Region region) {
         this.idLevel = idLevel;
         this.value = value;
         this.time = time;
@@ -38,11 +38,11 @@ public class Level {
         this.idLevel = idLevel;
     }
 
-    public Double getValue() {
+    public float getValue() {
         return value;
     }
 
-    public void setValue(Double value) {
+    public void setValue(float value) {
         this.value = value;
     }
 
