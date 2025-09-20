@@ -1,17 +1,20 @@
 package org.example.tmsserver.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-
+import jakarta.persistence.*;
 import java.util.List;
 
 @Entity
+@Table(name = "region")
 public class Region {
+
     @Id
+    @Column(name = "id_region")
     private Long idRegion;
 
+    @Column(name = "geolocation")
     private String geolocation;
+
+    @Column(name = "name")
     private String name;
 
     @OneToMany(mappedBy = "region")
@@ -25,4 +28,72 @@ public class Region {
 
     @OneToMany(mappedBy = "region")
     private List<RegionIndicator> indicators;
+
+    public Region() {}
+
+    public Region(Long idRegion, String geolocation, String name, List<Camera> cameras, List<Level> levels, List<Role> roles, List<RegionIndicator> indicators) {
+        this.idRegion = idRegion;
+        this.geolocation = geolocation;
+        this.name = name;
+        this.cameras = cameras;
+        this.levels = levels;
+        this.roles = roles;
+        this.indicators = indicators;
+    }
+
+    public Long getIdRegion() {
+        return idRegion;
+    }
+
+    public void setIdRegion(Long idRegion) {
+        this.idRegion = idRegion;
+    }
+
+    public String getGeolocation() {
+        return geolocation;
+    }
+
+    public void setGeolocation(String geolocation) {
+        this.geolocation = geolocation;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public List<Camera> getCameras() {
+        return cameras;
+    }
+
+    public void setCameras(List<Camera> cameras) {
+        this.cameras = cameras;
+    }
+
+    public List<Level> getLevels() {
+        return levels;
+    }
+
+    public void setLevels(List<Level> levels) {
+        this.levels = levels;
+    }
+
+    public List<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(List<Role> roles) {
+        this.roles = roles;
+    }
+
+    public List<RegionIndicator> getIndicators() {
+        return indicators;
+    }
+
+    public void setIndicators(List<RegionIndicator> indicators) {
+        this.indicators = indicators;
+    }
 }
