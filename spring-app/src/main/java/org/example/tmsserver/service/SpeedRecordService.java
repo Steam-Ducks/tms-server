@@ -80,13 +80,4 @@ public class SpeedRecordService {
         }
     }
 
-    public void exemploUso(Long regionId) {
-        List<SpeedRecord> registros = speedRecordRepository.findAllByRegionId(regionId);
-
-        registros.forEach(r -> {
-            System.out.println(r.getId() + " - " + r.getSpeed() + " km/h - " + r.getVehicleType()
-                    + " - Camera: " + r.getCamera().getIdCamera()
-                    + " - Região: " + r.getCamera().getRegion().getName());
-        });
-    }
 }

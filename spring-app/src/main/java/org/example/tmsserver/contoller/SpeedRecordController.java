@@ -14,8 +14,4 @@ public class SpeedRecordController {
         this.speedRecordService = speedRecordService;
     }
 
-    @GetMapping("/speed-records/region/{regionId}")
-    public void listarRegistros(@PathVariable Long regionId) {
-        speedRecordService.exemploUso(regionId);
-    }
 }
