@@ -10,7 +10,7 @@ public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_role")
-    private Long id;
+    private Long idRole;
 
     @Column(name = "description")
     private String description;
@@ -31,11 +31,11 @@ public class Role {
     }
 
     public Long getId() {
-        return id;
+        return idRole;
     }
 
     public void setId(Long id) {
-        this.id = id;
+        this.idRole = id;
     }
 
     public String getDescription() {

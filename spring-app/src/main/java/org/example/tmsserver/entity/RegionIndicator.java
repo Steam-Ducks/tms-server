@@ -1,7 +1,7 @@
 package org.example.tmsserver.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @IdClass(RegionIndicatorId.class)
@@ -17,13 +17,13 @@ public class RegionIndicator {
     private Long idIndicator;
 
     @Column(name = "value")
-    private Double value;
+    private Integer value;
 
-    @Column(name = "timestamp")
-    private LocalDateTime timestamp;
+    @Column(name = "time")
+    private OffsetDateTime time;
 
     @Column(name = "change")
-    private Double change;
+    private String change;
 
     @ManyToOne
     @JoinColumn(name = "id_region", insertable = false, updatable = false)
@@ -35,11 +35,11 @@ public class RegionIndicator {
 
     public RegionIndicator() {}
 
-    public RegionIndicator(Long idRegion, Long idIndicator, Double value, LocalDateTime timestamp, Double change, Region region, Indicator indicator) {
+    public RegionIndicator(Long idRegion, Long idIndicator, Integer value, OffsetDateTime time, String change, Region region, Indicator indicator) {
         this.idRegion = idRegion;
         this.idIndicator = idIndicator;
         this.value = value;
-        this.timestamp = timestamp;
+        this.time = time;
         this.change = change;
         this.region = region;
         this.indicator = indicator;
@@ -61,27 +61,27 @@ public class RegionIndicator {
         this.idIndicator = idIndicator;
     }
 
-    public Double getValue() {
+    public Integer getValue() {
         return value;
     }
 
-    public void setValue(Double value) {
+    public void setValue(Integer value) {
         this.value = value;
     }
 
-    public LocalDateTime getTimestamp() {
-        return timestamp;
+    public OffsetDateTime getTime() {
+        return time;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
+    public void setTime(OffsetDateTime time) {
+        this.time = time;
     }
 
-    public Double getChange() {
+    public String getChange() {
         return change;
     }
 
-    public void setChange(Double change) {
+    public void setChange(String change) {
         this.change = change;
     }
 

@@ -1,6 +1,8 @@
 package org.example.tmsserver.entity;
 
 import jakarta.persistence.*;
+
+import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
@@ -12,10 +14,10 @@ public class Camera {
     private String idCamera;
 
     @Column(name = "latitude")
-    private String latitude;
+    private BigDecimal latitude;
 
     @Column(name = "longitude")
-    private String longitude;
+    private BigDecimal longitude;
 
     @Column(name = "bairro")
     private String bairro;
@@ -32,7 +34,7 @@ public class Camera {
 
     public Camera() {}
 
-    public Camera(String idCamera, String latitude, String longitude, String bairro, Integer speedLimit, Region region, List<SpeedRecord> speedRecords) {
+    public Camera(String idCamera, BigDecimal latitude, BigDecimal longitude, String bairro, Integer speedLimit, Region region, List<SpeedRecord> speedRecords) {
         this.idCamera = idCamera;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -51,19 +53,19 @@ public class Camera {
         this.idCamera = idCamera;
     }
 
-    public String getLatitude() {
+    public BigDecimal getLatitude() {
         return latitude;
     }
 
-    public void setLatitude(String latitude) {
+    public void setLatitude(BigDecimal latitude) {
         this.latitude = latitude;
     }
 
-    public String getLongitude() {
+    public BigDecimal getLongitude() {
         return longitude;
     }
 
-    public void setLongitude(String longitude) {
+    public void setLongitude(BigDecimal longitude) {
         this.longitude = longitude;
     }
 

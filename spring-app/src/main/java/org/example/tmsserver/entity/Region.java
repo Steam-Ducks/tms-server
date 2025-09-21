@@ -1,6 +1,10 @@
 package org.example.tmsserver.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import org.locationtech.jts.geom.Geometry;
+
 import java.util.List;
 
 @Entity
@@ -8,11 +12,14 @@ import java.util.List;
 public class Region {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_region")
     private Long idRegion;
 
-    @Column(name = "geolocation")
-    private String geolocation;
+
+    @Column(name = "geolocation", columnDefinition = "SDO_GEOMETRY")
+    @JdbcTypeCode(SqlTypes.OTHER)
+    private Geometry geolocation;
 
     @Column(name = "name")
     private String name;
@@ -31,7 +38,7 @@ public class Region {
 
     public Region() {}
 
-    public Region(Long idRegion, String geolocation, String name, List<Camera> cameras, List<Level> levels, List<Role> roles, List<RegionIndicator> indicators) {
+    public Region(Long idRegion, Geometry geolocation, String name, List<Camera> cameras, List<Level> levels, List<Role> roles, List<RegionIndicator> indicators) {
         this.idRegion = idRegion;
         this.geolocation = geolocation;
         this.name = name;
@@ -49,11 +56,11 @@ public class Region {
         this.idRegion = idRegion;
     }
 
-    public String getGeolocation() {
+    public Geometry getGeolocation() {
         return geolocation;
     }
 
-    public void setGeolocation(String geolocation) {
+    public void setGeolocation(Geometry geolocation) {
         this.geolocation = geolocation;
     }
 

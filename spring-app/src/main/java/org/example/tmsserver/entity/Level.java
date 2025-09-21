@@ -1,21 +1,23 @@
 package org.example.tmsserver.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "app_level")
 public class Level {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_level")
     private Long idLevel;
+
 
     @Column(name = "value")
     private Integer value;
 
     @Column(name = "time")
-    private LocalDateTime time;
+    private OffsetDateTime time;
 
     @ManyToOne
     @JoinColumn(name = "id_region", nullable = false)
@@ -23,7 +25,7 @@ public class Level {
 
     public Level() {}
 
-    public Level(Long idLevel, Integer value, LocalDateTime time, Region region) {
+    public Level(Long idLevel, Integer value, OffsetDateTime time, Region region) {
         this.idLevel = idLevel;
         this.value = value;
         this.time = time;
@@ -46,11 +48,11 @@ public class Level {
         this.value = value;
     }
 
-    public LocalDateTime getTime() {
+    public OffsetDateTime getTime() {
         return time;
     }
 
-    public void setTime(LocalDateTime time) {
+    public void setTime(OffsetDateTime time) {
         this.time = time;
     }
 

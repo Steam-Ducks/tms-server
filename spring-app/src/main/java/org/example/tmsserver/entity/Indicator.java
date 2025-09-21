@@ -1,15 +1,20 @@
 package org.example.tmsserver.entity;
 
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(name = "indicator")
 public class Indicator {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_indicator")
     private Long idIndicator;
+
 
     @Column(name = "name")
     private String name;
@@ -17,11 +22,11 @@ public class Indicator {
     @Column(name = "description")
     private String description;
 
-    @OneToMany(mappedBy = "indicator")
-    private List<RegionIndicator> regionIndicators;
+    @OneToMany(mappedBy = "indicator", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RegionIndicator> regionIndicators = new ArrayList<>();
 
-    @OneToMany(mappedBy = "indicator")
-    private List<Protocol> protocols;
+    @OneToMany(mappedBy = "indicator", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Protocol> protocols = new ArrayList<>();
 
     public Indicator() {}
 
@@ -71,5 +76,18 @@ public class Indicator {
 
     public void setProtocols(List<Protocol> protocols) {
         this.protocols = protocols;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Indicator)) return false;
+        Indicator that = (Indicator) o;
+        return Objects.equals(idIndicator, that.idIndicator);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(idIndicator);
     }
 }

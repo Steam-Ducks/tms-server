@@ -1,8 +1,6 @@
 package org.example.tmsserver.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -10,34 +8,32 @@ import java.util.Objects;
 @Embeddable
 public class RegionIndicatorId implements Serializable {
 
-    @Id
     @Column(name = "id_region")
-    private Long idRegion;
+    private Integer idRegion;
 
-    @Id
     @Column(name = "id_indicator")
-    private Long idIndicator;
+    private Integer idIndicator;
 
     public RegionIndicatorId() {}
 
-    public RegionIndicatorId(Long idRegion, Long idIndicator) {
+    public RegionIndicatorId(Integer idRegion, Integer idIndicator) {
         this.idRegion = idRegion;
         this.idIndicator = idIndicator;
     }
 
-    public Long getIdRegion() {
+    public Integer getIdRegion() {
         return idRegion;
     }
 
-    public void setIdRegion(Long idRegion) {
+    public void setIdRegion(Integer idRegion) {
         this.idRegion = idRegion;
     }
 
-    public Long getIdIndicator() {
+    public Integer getIdIndicator() {
         return idIndicator;
     }
 
-    public void setIdIndicator(Long idIndicator) {
+    public void setIdIndicator(Integer idIndicator) {
         this.idIndicator = idIndicator;
     }
 

@@ -1,7 +1,9 @@
 package org.example.tmsserver.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "speed_record")
@@ -13,10 +15,10 @@ public class SpeedRecord {
     private Long id;
 
     @Column(name = "speed")
-    private Integer speed;
+    private BigDecimal speed;
 
-    @Column(name = "timestamp")
-    private LocalDateTime timestamp;
+    @Column(name = "time")
+    private OffsetDateTime time;
 
     @Column(name = "vehicle_type")
     private String vehicleType;
@@ -28,6 +30,14 @@ public class SpeedRecord {
     public SpeedRecord() {
     }
 
+    public SpeedRecord(Long id, BigDecimal speed, java.time.OffsetDateTime time, String vehicleType, Camera camera) {
+        this.id = id;
+        this.speed = speed;
+        this.time = time;
+        this.vehicleType = vehicleType;
+        this.camera = camera;
+    }
+
     public Long getId() {
         return id;
     }
@@ -36,20 +46,20 @@ public class SpeedRecord {
         this.id = id;
     }
 
-    public Integer getSpeed() {
+    public BigDecimal getSpeed() {
         return speed;
     }
 
-    public void setSpeed(Integer speed) {
+    public void setSpeed(BigDecimal speed) {
         this.speed = speed;
     }
 
-    public LocalDateTime getTimestamp() {
-        return timestamp;
+    public OffsetDateTime getTime() {
+        return time;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
+    public void setTime(OffsetDateTime time) {
+        this.time = time;
     }
 
     public String getVehicleType() {

@@ -3,7 +3,12 @@ package org.example.tmsserver.entity;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "app_user")
+@Table(name = "app_user",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_email", columnNames = "email"),
+                @UniqueConstraint(name = "uk_phone", columnNames = "phone_number")
+        })
+
 public class User {
 
     @Id
@@ -18,7 +23,7 @@ public class User {
     @Column(name="email", unique = true)
     private String email;
 
-    @Column(name = "phone_number", columnDefinition = "CHAR(10)")
+    @Column(name = "phone_number", columnDefinition = "CHAR(11)")
     private String phoneNumber;
 
     public User() {
