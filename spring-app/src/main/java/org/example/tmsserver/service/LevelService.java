@@ -7,7 +7,6 @@ import org.example.tmsserver.repository.RegionIndicatorRepository;
 import org.example.tmsserver.repository.RegionRepository;
 import org.springframework.stereotype.Service;
 import org.example.tmsserver.entity.Level;
-import org.example.tmsserver.entity.Region;
 
 
 import java.util.List;
@@ -27,7 +26,7 @@ public class LevelService {
         this.regionRepository = regionRepository;
     }
 
-    public LevelRepository calculateLevelForRegion(Long regionId) {
+    public Level calculateLevelForRegion(Long regionId) {
         List<Integer> values = regionIndicatorRepository.findValuesByRegion(regionId);
 
         if (values.isEmpty()) {
@@ -49,7 +48,7 @@ public class LevelService {
         level.setTime(OffsetDateTime.now());
         level.setRegion(region);
 
-        return levelRepository;
+        return levelRepository.save(level);
     }
 
     private int mapAverageToLevel(double avg) {
