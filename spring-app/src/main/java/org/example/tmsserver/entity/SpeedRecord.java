@@ -1,56 +1,49 @@
 package org.example.tmsserver.entity;
 
 import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "SPEED_RECORD")
+@Table(name = "speed_record")
 public class SpeedRecord {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "speed_record_seq")
-    @SequenceGenerator(name = "speed_record_seq", sequenceName = "SPEED_RECORD_SEQ", allocationSize = 1)
-    @Column(name = "ID_SPEED_RECORD")
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_speed_record")
+    private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_CAMERA", nullable = false)
-    private Camera camera;
-
-    @Column(name = "SPEED", precision = 38, scale = 2)
+    @Column(name = "speed")
     private BigDecimal speed;
 
-    @Column(name = "TIME")
+    @Column(name = "time")
     private OffsetDateTime time;
 
-    @Column(name = "VEHICLE_TYPE", length = 255)
+    @Column(name = "vehicle_type")
     private String vehicleType;
 
-    public SpeedRecord() {}
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_camera")
+    private Camera camera;
 
-    public SpeedRecord(Camera camera, BigDecimal speed, OffsetDateTime time, String vehicleType) {
-        this.camera = camera;
+    public SpeedRecord() {
+    }
+
+    public SpeedRecord(Integer id, BigDecimal speed, java.time.OffsetDateTime time, String vehicleType, Camera camera) {
+        this.id = id;
         this.speed = speed;
         this.time = time;
         this.vehicleType = vehicleType;
+        this.camera = camera;
     }
 
-    // Getters e Setters
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
-    }
-
-    public Camera getCamera() {
-        return camera;
-    }
-
-    public void setCamera(Camera camera) {
-        this.camera = camera;
     }
 
     public BigDecimal getSpeed() {
@@ -75,5 +68,13 @@ public class SpeedRecord {
 
     public void setVehicleType(String vehicleType) {
         this.vehicleType = vehicleType;
+    }
+
+    public Camera getCamera() {
+        return camera;
+    }
+
+    public void setCamera(Camera camera) {
+        this.camera = camera;
     }
 }

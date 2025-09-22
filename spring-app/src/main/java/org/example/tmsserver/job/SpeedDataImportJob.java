@@ -18,14 +18,14 @@ public class SpeedDataImportJob {
     }
 
     // Para teste, cron = "0 * * * * *" repete a cada minuto
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "0 */10 * * * *")
     public void execute() {
+        System.out.println("Inicializado importação de registros!");
+
         speedRecordService.clearSpeedRecords();
         speedRecordService.fetchAndSaveSpeedRecords();
-        System.out.println("Speed records atualizados!");
-
-        // Chama cálculo de indicadores
         regionIndicatorService.calculateAndSaveRegionIndicators();
-        System.out.println("Region indicators calculados e salvos!");
+
+        System.out.println("Finalizado importação de registros!");
     }
 }

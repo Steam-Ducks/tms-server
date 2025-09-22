@@ -3,43 +3,48 @@ package org.example.tmsserver.entity;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
-@Table(name = "CAMERA")
+@Table(name = "camera")
 public class Camera {
 
     @Id
-    @Column(name = "ID_CAMERA", length = 50)
+    @Column(name = "id_camera")
     private String idCamera;
 
-    // Relacionamento com Region
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_REGION")
-    private Region region;
+    @Column(name = "latitude")
+    private BigDecimal latitude;
 
-    @Column(name = "LATITUDE")
-    private Double latitude;
+    @Column(name = "longitude")
+    private BigDecimal longitude;
 
-    @Column(name = "LONGITUDE")
-    private Double longitude;
-
-    @Column(name = "BAIRRO", length = 30)
+    @Column(name = "bairro")
     private String bairro;
 
-    @Column(name = "SPEED_LIMIT", precision = 5, scale = 2)
-    private BigDecimal speedLimit;
+    @Column(name = "speed_limit")
+    private Integer speedLimit;
+
+    @ManyToOne
+    @JoinColumn(name = "id_region", nullable = false)
+    private Region region;
+
+    @OneToMany(mappedBy = "camera")
+    private List<SpeedRecord> speedRecords;
 
     public Camera() {}
 
-    public Camera(String idCamera, Region region, Double latitude, Double longitude, String bairro, BigDecimal speedLimit) {
+    public Camera(String idCamera, BigDecimal latitude, BigDecimal longitude, String bairro, Integer speedLimit, Region region, List<SpeedRecord> speedRecords) {
         this.idCamera = idCamera;
-        this.region = region;
         this.latitude = latitude;
         this.longitude = longitude;
         this.bairro = bairro;
         this.speedLimit = speedLimit;
+        this.region = region;
+        this.speedRecords = speedRecords;
     }
 
+    // Getters e Setters
     public String getIdCamera() {
         return idCamera;
     }
@@ -48,27 +53,19 @@ public class Camera {
         this.idCamera = idCamera;
     }
 
-    public Region getRegion() {
-        return region;
-    }
-
-    public void setRegion(Region region) {
-        this.region = region;
-    }
-
-    public Double getLatitude() {
+    public BigDecimal getLatitude() {
         return latitude;
     }
 
-    public void setLatitude(Double latitude) {
+    public void setLatitude(BigDecimal latitude) {
         this.latitude = latitude;
     }
 
-    public Double getLongitude() {
+    public BigDecimal getLongitude() {
         return longitude;
     }
 
-    public void setLongitude(Double longitude) {
+    public void setLongitude(BigDecimal longitude) {
         this.longitude = longitude;
     }
 
@@ -80,11 +77,27 @@ public class Camera {
         this.bairro = bairro;
     }
 
-    public BigDecimal getSpeedLimit() {
+    public Integer getSpeedLimit() {
         return speedLimit;
     }
 
-    public void setSpeedLimit(BigDecimal speedLimit) {
+    public void setSpeedLimit(Integer speedLimit) {
         this.speedLimit = speedLimit;
+    }
+
+    public Region getRegion() {
+        return region;
+    }
+
+    public void setRegion(Region region) {
+        this.region = region;
+    }
+
+    public List<SpeedRecord> getSpeedRecords() {
+        return speedRecords;
+    }
+
+    public void setSpeedRecords(List<SpeedRecord> speedRecords) {
+        this.speedRecords = speedRecords;
     }
 }

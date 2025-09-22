@@ -38,38 +38,63 @@ public class SpeedRecordService {
 
             // Para teste
             String initialStr = "2025-08-16 15:05:00";
-
             // Para produção
-            //String initialStr = initial.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            // String initialStr = initial.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
             String url = "https://mock-api-75a7.onrender.com/radares?initial_date=" + initialStr;
-
             RadarApiResponse response = restTemplate.getForObject(url, RadarApiResponse.class);
 
-            if (response != null && response.getData() != null) {
-                List<SpeedRecord> records = response.getData().stream()
-                        .map(d -> {
+            if (response == null || response.getData() == null) return;
 
-                            String cameraId = d.getCameraNumero().trim();
-                            Camera camera = cameraRepository.findById(cameraId).orElse(null);
-                            if (camera == null) {
-                                System.err.println("Câmera não encontrada: " + cameraId);
-                                return null;
-                            }
+            // Lista de IDs das câmeras
+            List<String> cameraIds = response.getData().stream()
+                    .map(d -> d.getCameraNumero().trim())
+                    .distinct()
+                    .toList();
 
-                            SpeedRecord r = new SpeedRecord();
-                            r.setCamera(camera);
-                            r.setSpeed(BigDecimal.valueOf(d.getVelocidade()));
-                            r.setVehicleType(d.getTipoVeiculo());
+            // Busca das câmeras no banco
+            List<Camera> cameras = cameraRepository.findCamerasByIdList(cameraIds);
+            System.out.println("Câmeras carregadas do banco: " + cameras.stream()
+                    .map(Camera::getIdCamera)
+                    .toList());
+
+            // Mapeamento dos registros
+            List<SpeedRecord> records = response.getData().stream()
+                    .map(d -> {
+                        String cameraId = d.getCameraNumero().trim();
+                        Camera camera = cameras.stream()
+                                .filter(c -> c.getIdCamera().equals(cameraId))
+                                .findFirst()
+                                .orElse(null);
+
+                        if (camera == null) {
+                            System.err.println("Câmera do radar não encontrada no banco: " + cameraId);
+                            return null;
+                        }
+
+                        // Parse seguro da data
+                        OffsetDateTime time;
+                        try {
                             LocalDateTime ldt = LocalDateTime.parse(d.getDataHoraTz());
-                            r.setTime(ldt.atOffset(ZoneOffset.ofHours(-3)));
-                            return r;
+                            time = ldt.atOffset(ZoneOffset.ofHours(-3));
+                        } catch (Exception ex) {
+                            System.err.println("Falha ao parsear data: " + d.getDataHoraTz());
+                            return null;
+                        }
 
-                        })
-                        .filter(r -> r != null)
-                        .toList();
+                        SpeedRecord r = new SpeedRecord();
+                        r.setCamera(camera);
+                        r.setSpeed(BigDecimal.valueOf(d.getVelocidade()));
+                        r.setVehicleType(d.getTipoVeiculo());
+                        r.setTime(time);
+                        return r;
+                    })
+                    .filter(r -> r != null)
+                    .toList();
 
+            if (!records.isEmpty()) {
                 speedRecordRepository.saveAll(records);
+                System.out.println("Indicadores salvos com sucesso! Total: " + records.size());
             }
 
         } catch (HttpServerErrorException e) {
