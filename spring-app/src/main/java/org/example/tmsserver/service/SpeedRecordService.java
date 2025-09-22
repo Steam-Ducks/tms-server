@@ -68,7 +68,7 @@ public class SpeedRecordService {
                                 .orElse(null);
 
                         if (camera == null) {
-                            System.err.println("Câmera do radar não encontrada no banco: " + cameraId);
+                            //System.err.println("Câmera do radar não encontrada no banco: " + cameraId);
                             return null;
                         }
 

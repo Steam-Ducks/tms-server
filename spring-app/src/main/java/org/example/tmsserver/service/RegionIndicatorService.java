@@ -27,65 +27,81 @@ public class RegionIndicatorService {
 
     @Transactional
     public void calculateAndSaveRegionIndicators() {
+        System.out.println("Iniciando cálculo de indicadores...");
         List<Object[]> data = speedRecordRepository.findRegionCameraAggregates();
+        System.out.println("Dados retornados: " + data.size() + " registros");
 
         Map<Integer, BigDecimal[]> regionMap = new HashMap<>();
 
         for (Object[] row : data) {
-
-            Integer regionId = row[0] != null ? ((Number) row[0]).intValue() : null;
-            String cameraId = row[1] != null ? row[1].toString() : null;
-            BigDecimal speedLimit = null;
-            if (row[2] != null) {
-                if (row[2] instanceof BigDecimal) {
-                    speedLimit = (BigDecimal) row[2];
-                } else if (row[2] instanceof Number) {
-                    speedLimit = BigDecimal.valueOf(((Number) row[2]).doubleValue());
+            try {
+                Integer regionId = row[0] != null ? ((Number) row[0]).intValue() : null;
+                String cameraId = row[1] != null ? row[1].toString() : null;
+                BigDecimal speedLimit = null;
+                if (row[2] != null) {
+                    if (row[2] instanceof BigDecimal) {
+                        speedLimit = (BigDecimal) row[2];
+                    } else if (row[2] instanceof Number) {
+                        speedLimit = BigDecimal.valueOf(((Number) row[2]).doubleValue());
+                    }
                 }
+                Long count = row[3] != null ? ((Number) row[3]).longValue() : null;
+                BigDecimal sumSpeed = row[4] instanceof BigDecimal ? (BigDecimal) row[4] : null;
+
+                System.out.println("Processando regionId=" + regionId + ", cameraId=" + cameraId
+                        + ", speedLimit=" + speedLimit + ", count=" + count + ", sumSpeed=" + sumSpeed);
+
+                BigDecimal cameraAvg = sumSpeed.divide(BigDecimal.valueOf(count), 6, RoundingMode.HALF_UP);
+                BigDecimal normalized = cameraAvg.divide(speedLimit, 6, RoundingMode.HALF_UP);
+
+                regionMap.putIfAbsent(regionId, new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
+                BigDecimal[] vals = regionMap.get(regionId);
+
+                vals[0] = vals[0].add(normalized.multiply(BigDecimal.valueOf(count)));
+                vals[1] = vals[1].add(BigDecimal.valueOf(count));
+            } catch (Exception e) {
+                System.err.println("Erro processando linha: " + e.getMessage());
+                e.printStackTrace();
             }
-            Long count = row[3] != null ? ((Number) row[3]).longValue() : null;
-            BigDecimal sumSpeed = row[4] instanceof BigDecimal ? (BigDecimal) row[4] : null;
-
-            BigDecimal cameraAvg = sumSpeed.divide(BigDecimal.valueOf(count), 6, RoundingMode.HALF_UP);
-            BigDecimal normalized = cameraAvg.divide(speedLimit, 6, RoundingMode.HALF_UP);
-
-            regionMap.putIfAbsent(regionId, new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
-            BigDecimal[] vals = regionMap.get(regionId);
-
-            vals[0] = vals[0].add(normalized.multiply(BigDecimal.valueOf(count)));
-            vals[1] = vals[1].add(BigDecimal.valueOf(count));
         }
 
         OffsetDateTime now = OffsetDateTime.now();
+        System.out.println("Cálculo por região finalizado. Criando RegionIndicators...");
 
-        List<RegionIndicator> indicators = regionMap.entrySet().stream()
-                .map(entry -> {
-                    Integer regionId = entry.getKey();
-                    BigDecimal[] vals = entry.getValue();
+        for (Map.Entry<Integer, BigDecimal[]> entry : regionMap.entrySet()) {
+            Integer regionId = entry.getKey();
+            BigDecimal[] vals = entry.getValue();
 
-                    BigDecimal regionalAvg = BigDecimal.ZERO;
-                    if (vals[1].compareTo(BigDecimal.ZERO) > 0) {
-                        regionalAvg = vals[0].divide(vals[1], 6, RoundingMode.HALF_UP);
-                    }
+            try {
+                BigDecimal regionalAvg = BigDecimal.ZERO;
+                if (vals[1].compareTo(BigDecimal.ZERO) > 0) {
+                    regionalAvg = vals[0].divide(vals[1], 6, RoundingMode.HALF_UP);
+                }
 
-                    RegionIndicator indicator = new RegionIndicator();
-                    indicator.setIdRegion(regionId);
-                    indicator.setIdIndicator(1);
-                    indicator.setValue(regionalAvg.multiply(BigDecimal.valueOf(100)).intValue());
-                    indicator.setTime(now);
-                    indicator.setChange("CALC");
+                RegionIndicator indicator = new RegionIndicator();
+                indicator.setIdRegion(regionId);
+                indicator.setIdIndicator(1);
+                indicator.setValue(regionalAvg.multiply(BigDecimal.valueOf(100)).intValue());
+                indicator.setTime(now);
+                indicator.setChange("CALC");
 
-                    return indicator;
-                })
-                .toList();
+                System.out.println("Preparando salvar: " + indicator);
 
-        try {
-            regionIndicatorRepository.saveAll(indicators);
-            regionIndicatorRepository.flush();
-            System.out.println("Indicadores salvos com sucesso!");
-        } catch (Exception e) {
-            System.err.println("Erro ao salvar indicadores: " + e.getMessage());
-            e.printStackTrace();
+                try {
+                    regionIndicatorRepository.save(indicator);
+                    regionIndicatorRepository.flush();
+                    System.out.println("Salvo com sucesso: regionId=" + regionId);
+                } catch (Exception e) {
+                    System.err.println("Falha ao salvar indicator para regionId=" + regionId);
+                    e.printStackTrace();
+                }
+
+            } catch (Exception e) {
+                System.err.println("Erro criando RegionIndicator para regionId=" + regionId + ": " + e.getMessage());
+                e.printStackTrace();
+            }
         }
+
+        System.out.println("Processamento de indicadores finalizado!");
     }
 }
