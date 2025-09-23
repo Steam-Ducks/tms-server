@@ -16,9 +16,8 @@ public class Region {
     @Column(name = "id_region")
     private Integer idRegion;
 
-
     @Column(name = "geolocation", columnDefinition = "SDO_GEOMETRY")
-    @JdbcTypeCode(SqlTypes.OTHER)
+    @JdbcTypeCode(SqlTypes.GEOMETRY)
     private Geometry geolocation;
 
     @Column(name = "name")
@@ -36,9 +35,12 @@ public class Region {
     @OneToMany(mappedBy = "region")
     private List<RegionIndicator> indicators;
 
-    public Region() {}
+    public Region() {
+    }
 
-    public Region(Integer idRegion, Geometry geolocation, String name, List<Camera> cameras, List<Level> levels, List<Role> roles, List<RegionIndicator> indicators) {
+    public Region(Integer idRegion, Geometry geolocation, String name,
+            List<Camera> cameras, List<Level> levels,
+            List<Role> roles, List<RegionIndicator> indicators) {
         this.idRegion = idRegion;
         this.geolocation = geolocation;
         this.name = name;
@@ -103,4 +105,5 @@ public class Region {
     public void setIndicators(List<RegionIndicator> indicators) {
         this.indicators = indicators;
     }
+
 }

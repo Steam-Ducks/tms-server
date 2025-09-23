@@ -12,7 +12,7 @@ public class SpeedRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_speed_record")
-    private Long id;
+    private Integer id;
 
     @Column(name = "speed")
     private BigDecimal speed;
@@ -30,7 +30,7 @@ public class SpeedRecord {
     public SpeedRecord() {
     }
 
-    public SpeedRecord(Long id, BigDecimal speed, java.time.OffsetDateTime time, String vehicleType, Camera camera) {
+    public SpeedRecord(Integer id, BigDecimal speed, java.time.OffsetDateTime time, String vehicleType, Camera camera) {
         this.id = id;
         this.speed = speed;
         this.time = time;
@@ -38,11 +38,11 @@ public class SpeedRecord {
         this.camera = camera;
     }
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
