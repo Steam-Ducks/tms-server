@@ -9,7 +9,7 @@
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         @Column(name = "id_protocol")
-        private Long idProtocol;
+        private Integer idProtocol;
 
 
         @Column(name = "description")
@@ -21,17 +21,17 @@
 
         public Protocol() {}
 
-        public Protocol(Long idProtocol, String description, Indicator indicator) {
+        public Protocol(Integer idProtocol, String description, Indicator indicator) {
             this.idProtocol = idProtocol;
             this.description = description;
             this.indicator = indicator;
         }
 
-        public Long getIdProtocol() {
+        public Integer getIdProtocol() {
             return idProtocol;
         }
 
-        public void setIdProtocol(Long idProtocol) {
+        public void setIdProtocol(Integer idProtocol) {
             this.idProtocol = idProtocol;
         }
 

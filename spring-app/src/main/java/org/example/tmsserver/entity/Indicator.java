@@ -13,10 +13,9 @@ public class Indicator {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_indicator")
-    private Long idIndicator;
+    private Integer idIndicator;
 
-
-    @Column(name = "name")
+    @Column(name = "name", unique = true, nullable = false)
     private String name;
 
     @Column(name = "description")
@@ -30,7 +29,7 @@ public class Indicator {
 
     public Indicator() {}
 
-    public Indicator(Long idIndicator, String name, String description, List<RegionIndicator> regionIndicators, List<Protocol> protocols) {
+    public Indicator(Integer idIndicator, String name, String description, List<RegionIndicator> regionIndicators, List<Protocol> protocols) {
         this.idIndicator = idIndicator;
         this.name = name;
         this.description = description;
@@ -38,11 +37,11 @@ public class Indicator {
         this.protocols = protocols;
     }
 
-    public Long getIdIndicator() {
+    public Integer getIdIndicator() {
         return idIndicator;
     }
 
-    public void setIdIndicator(Long idIndicator) {
+    public void setIdIndicator(Integer idIndicator) {
         this.idIndicator = idIndicator;
     }
 
