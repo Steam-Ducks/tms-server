@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Repository
-public interface SpeedRecordRepository extends JpaRepository<SpeedRecord, Long> {
+public interface SpeedRecordRepository extends JpaRepository<SpeedRecord, Integer> {
 
     @Modifying
     @Transactional
