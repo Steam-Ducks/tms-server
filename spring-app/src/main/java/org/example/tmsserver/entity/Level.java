@@ -10,7 +10,7 @@ public class Level {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_level")
-    private Long idLevel;
+    private Integer idLevel;
 
 
     @Column(name = "value")
@@ -25,18 +25,18 @@ public class Level {
 
     public Level() {}
 
-    public Level(Long idLevel, Integer value, OffsetDateTime time, Region region) {
+    public Level(Integer idLevel, Integer value, OffsetDateTime time, Region region) {
         this.idLevel = idLevel;
         this.value = value;
         this.time = time;
         this.region = region;
     }
 
-    public Long getIdLevel() {
+    public Integer getIdLevel() {
         return idLevel;
     }
 
-    public void setIdLevel(Long idLevel) {
+    public void setIdLevel(Integer idLevel) {
         this.idLevel = idLevel;
     }
 

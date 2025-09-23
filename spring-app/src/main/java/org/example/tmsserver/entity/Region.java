@@ -14,7 +14,7 @@ public class Region {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_region")
-    private Long idRegion;
+    private Integer idRegion;
 
 
     @Column(name = "geolocation", columnDefinition = "SDO_GEOMETRY")
@@ -38,7 +38,7 @@ public class Region {
 
     public Region() {}
 
-    public Region(Long idRegion, Geometry geolocation, String name, List<Camera> cameras, List<Level> levels, List<Role> roles, List<RegionIndicator> indicators) {
+    public Region(Integer idRegion, Geometry geolocation, String name, List<Camera> cameras, List<Level> levels, List<Role> roles, List<RegionIndicator> indicators) {
         this.idRegion = idRegion;
         this.geolocation = geolocation;
         this.name = name;
@@ -48,11 +48,11 @@ public class Region {
         this.indicators = indicators;
     }
 
-    public Long getIdRegion() {
+    public Integer getIdRegion() {
         return idRegion;
     }
 
-    public void setIdRegion(Long idRegion) {
+    public void setIdRegion(Integer idRegion) {
         this.idRegion = idRegion;
     }
 

@@ -10,11 +10,11 @@ public class RegionIndicator {
 
     @Id
     @Column(name = "id_region")
-    private Long idRegion;
+    private Integer idRegion;
 
     @Id
     @Column(name = "id_indicator")
-    private Long idIndicator;
+    private Integer idIndicator;
 
     @Column(name = "value")
     private Integer value;
@@ -35,7 +35,7 @@ public class RegionIndicator {
 
     public RegionIndicator() {}
 
-    public RegionIndicator(Long idRegion, Long idIndicator, Integer value, OffsetDateTime time, String change, Region region, Indicator indicator) {
+    public RegionIndicator(Integer idRegion, Integer idIndicator, Integer value, OffsetDateTime time, String change, Region region, Indicator indicator) {
         this.idRegion = idRegion;
         this.idIndicator = idIndicator;
         this.value = value;
@@ -45,19 +45,19 @@ public class RegionIndicator {
         this.indicator = indicator;
     }
 
-    public Long getIdRegion() {
+    public Integer getIdRegion() {
         return idRegion;
     }
 
-    public void setIdRegion(Long idRegion) {
+    public void setIdRegion(Integer idRegion) {
         this.idRegion = idRegion;
     }
 
-    public Long getIdIndicator() {
+    public Integer getIdIndicator() {
         return idIndicator;
     }
 
-    public void setIdIndicator(Long idIndicator) {
+    public void setIdIndicator(Integer idIndicator) {
         this.idIndicator = idIndicator;
     }
 
