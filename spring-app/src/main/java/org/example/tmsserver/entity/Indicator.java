@@ -15,7 +15,7 @@ public class Indicator {
     @Column(name = "id_indicator")
     private Integer idIndicator;
 
-    @Column(name = "name")
+    @Column(name = "name", unique = true, nullable = false)
     private String name;
 
     @Column(name = "description")

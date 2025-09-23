@@ -1,7 +1,11 @@
 package org.example.tmsserver.service;
 
+import org.example.tmsserver.entity.Indicator;
+import org.example.tmsserver.entity.Region;
 import org.example.tmsserver.entity.RegionIndicator;
+import org.example.tmsserver.repository.IndicatorRepository;
 import org.example.tmsserver.repository.RegionIndicatorRepository;
+import org.example.tmsserver.repository.RegionRepository;
 import org.example.tmsserver.repository.SpeedRecordRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,25 +16,58 @@ import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class RegionIndicatorService {
 
     private final SpeedRecordRepository speedRecordRepository;
     private final RegionIndicatorRepository regionIndicatorRepository;
+    private final RegionRepository regionRepository;
+    private final IndicatorRepository indicatorRepository;
 
     public RegionIndicatorService(SpeedRecordRepository speedRecordRepository,
-                                  RegionIndicatorRepository regionIndicatorRepository) {
+                                  RegionIndicatorRepository regionIndicatorRepository,
+                                  RegionRepository regionRepository,
+                                  IndicatorRepository indicatorRepository) {
         this.speedRecordRepository = speedRecordRepository;
         this.regionIndicatorRepository = regionIndicatorRepository;
+        this.regionRepository = regionRepository;
+        this.indicatorRepository = indicatorRepository;
     }
 
     @Transactional
     public void calculateAndSaveRegionIndicators() {
         System.out.println("Iniciando cálculo de indicadores...");
+
+        calculateAverageSpeedIndicator();
+
+        //future indicators here
+
+        System.out.println("Processamento de todos os indicadores finalizado!");
+    }
+
+    private void calculateAverageSpeedIndicator() {
+        System.out.println("Calculando indicador: Average Speed");
+
+        Optional<Indicator> indicatorOpt = indicatorRepository.findByName("Average Speed");
+        if (indicatorOpt.isEmpty()) {
+            System.err.println("Indicator 'Average Speed' not found.");
+            return;
+        }
+        Indicator indicatorEntity = indicatorOpt.get();
+
         List<Object[]> data = speedRecordRepository.findRegionCameraAggregates();
         System.out.println("Dados retornados: " + data.size() + " registros");
 
+        Map<Integer, BigDecimal[]> regionMap = calculateAverageSpeedByRegion(data);
+
+        saveRegionIndicators(regionMap, indicatorEntity);
+
+        System.out.println("Indicador Average Speed processado!");
+    }
+
+    private Map<Integer, BigDecimal[]> calculateAverageSpeedByRegion(List<Object[]> data) {
         Map<Integer, BigDecimal[]> regionMap = new HashMap<>();
 
         for (Object[] row : data) {
@@ -65,6 +102,10 @@ public class RegionIndicatorService {
             }
         }
 
+        return regionMap;
+    }
+
+    private void saveRegionIndicators(Map<Integer, BigDecimal[]> regionMap, Indicator indicator) {
         OffsetDateTime now = OffsetDateTime.now();
         System.out.println("Cálculo por região finalizado. Criando RegionIndicators...");
 
@@ -73,22 +114,29 @@ public class RegionIndicatorService {
             BigDecimal[] vals = entry.getValue();
 
             try {
+                Optional<Region> regionOpt = regionRepository.findById(regionId);
+                if (regionOpt.isEmpty()) {
+                    System.err.println("Region with ID " + regionId + " not found. Skipping.");
+                    continue;
+                }
+                Region regionEntity = regionOpt.get();
+
                 BigDecimal regionalAvg = BigDecimal.ZERO;
                 if (vals[1].compareTo(BigDecimal.ZERO) > 0) {
                     regionalAvg = vals[0].divide(vals[1], 6, RoundingMode.HALF_UP);
                 }
 
-                RegionIndicator indicator = new RegionIndicator();
-                indicator.setIdRegion(regionId);
-                indicator.setIdIndicator(1);
-                indicator.setValue(regionalAvg.multiply(BigDecimal.valueOf(100)).intValue());
-                indicator.setTime(now);
-                indicator.setChange("CALC");
+                RegionIndicator regionIndicator = new RegionIndicator();
+                regionIndicator.setRegion(regionEntity);
+                regionIndicator.setIndicator(indicator);
+                regionIndicator.setValue(regionalAvg.multiply(BigDecimal.valueOf(100)).intValue());
+                regionIndicator.setTime(now);
+                regionIndicator.setChange("CALC");
 
-                System.out.println("Preparando salvar: " + indicator);
+                System.out.println("Preparando salvar: regionId=" + regionId + ", value=" + regionIndicator.getValue());
 
                 try {
-                    regionIndicatorRepository.save(indicator);
+                    regionIndicatorRepository.save(regionIndicator);
                     regionIndicatorRepository.flush();
                     System.out.println("Salvo com sucesso: regionId=" + regionId);
                 } catch (Exception e) {
@@ -101,7 +149,5 @@ public class RegionIndicatorService {
                 e.printStackTrace();
             }
         }
-
-        System.out.println("Processamento de indicadores finalizado!");
     }
 }

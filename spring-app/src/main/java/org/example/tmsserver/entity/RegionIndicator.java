@@ -11,11 +11,13 @@ public class RegionIndicator {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "id_region", nullable = false)
-    private Integer idRegion;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_region", nullable = false)
+    private Region region;
 
-    @Column(name = "id_indicator", nullable = false)
-    private Integer idIndicator;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_indicator", nullable = false)
+    private Indicator indicator;
 
     @Column(name = "value")
     private Integer value;
@@ -26,44 +28,18 @@ public class RegionIndicator {
     @Column(name = "change")
     private String change;
 
-    @ManyToOne
-    @JoinColumn(name = "id_region", insertable = false, updatable = false)
-    private Region region;
-
-    @ManyToOne
-    @JoinColumn(name = "id_indicator", insertable = false, updatable = false)
-    private Indicator indicator;
-
     public RegionIndicator() {}
 
-    public RegionIndicator(Integer idRegion, Integer idIndicator, Integer value, OffsetDateTime time, String change, Region region, Indicator indicator) {
-        this.idRegion = idRegion;
-        this.idIndicator = idIndicator;
+    public RegionIndicator(Region region, Indicator indicator, Integer value, OffsetDateTime time, String change) {
+        this.region = region;
+        this.indicator = indicator;
         this.value = value;
         this.time = time;
         this.change = change;
-        this.region = region;
-        this.indicator = indicator;
     }
 
     public Integer getId() {
         return id;
-    }
-
-    public Integer getIdRegion() {
-        return idRegion;
-    }
-
-    public void setIdRegion(Integer idRegion) {
-        this.idRegion = idRegion;
-    }
-
-    public Integer getIdIndicator() {
-        return idIndicator;
-    }
-
-    public void setIdIndicator(Integer idIndicator) {
-        this.idIndicator = idIndicator;
     }
 
     public Integer getValue() {
