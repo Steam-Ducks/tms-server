@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface RegionIndicatorRepository extends JpaRepository<RegionIndicator, Integer> {
-    @Query("SELECT r.value FROM RegionIndicator r WHERE r.idRegion = :idRegion")
-    List<Integer> findValuesByRegion(@Param("idRegion") Long idRegion);
+    @Query("SELECT r.value FROM RegionIndicator r WHERE r.region.id = :regionId")
+    List<Integer> findValuesByRegion(@Param("regionId") Integer regionId);
 }
 

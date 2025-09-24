@@ -19,7 +19,7 @@ public class LevelController {
     }
 
     @PostMapping("/{regionId}/calculate")
-    public ResponseEntity<Level> calculate(@PathVariable Long regionId) {
+    public ResponseEntity<Level> calculate(@PathVariable Integer regionId) {
         Level level = levelService.calculateLevelForRegion(regionId);
         return ResponseEntity.ok(level);
     }

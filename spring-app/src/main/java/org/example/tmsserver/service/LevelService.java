@@ -27,7 +27,7 @@ public class LevelService {
         this.regionRepository = regionRepository;
     }
 
-    public Level calculateLevelForRegion(Long regionId) {
+    public Level calculateLevelForRegion(Integer regionId) {
         List<Integer> values = regionIndicatorRepository.findValuesByRegion(regionId);
 
         if (values.isEmpty()) {
