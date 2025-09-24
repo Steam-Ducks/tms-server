@@ -1,10 +1,15 @@
 package org.example.tmsserver.repository;
 
+import java.util.List;
 import org.example.tmsserver.entity.Region;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public interface RegionRepository extends JpaRepository<Region, Integer> {
+    @Query("select i.value from RegionIndicator i where i.region.id = :regionId")
+    List<Integer> findValuesByRegion(@Param("regionId") Integer regionId);
 }
 
