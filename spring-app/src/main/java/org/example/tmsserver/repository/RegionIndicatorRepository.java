@@ -10,7 +10,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface RegionIndicatorRepository extends JpaRepository<RegionIndicator, Integer> {
-    @Query("SELECT r.value FROM RegionIndicator r WHERE r.region.id = :regionId")
-    List<Integer> findValuesByRegion(@Param("regionId") Integer regionId);
+    @Query("SELECT r FROM RegionIndicator r WHERE r.region.idRegion = :regionId" +
+        " ORDER BY r.time DESC LIMIT :limit")
+    List<RegionIndicator> findValuesByRegion(@Param("regionId") Integer regionId, @Param("limit") Integer limit);
 }
 
