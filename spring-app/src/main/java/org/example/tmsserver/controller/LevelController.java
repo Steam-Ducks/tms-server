@@ -1,5 +1,6 @@
 package org.example.tmsserver.controller;
 
+import org.example.tmsserver.dto.LevelDTO;
 import org.example.tmsserver.entity.Level;
 import org.example.tmsserver.service.LevelService;
 import org.springframework.http.ResponseEntity;
@@ -19,8 +20,14 @@ public class LevelController {
     }
 
     @PostMapping("/{regionId}/calculate")
-    public ResponseEntity<Level> calculate(@PathVariable Integer regionId) {
+    public ResponseEntity<LevelDTO> calculate(@PathVariable Integer regionId) {
         Level level = levelService.calculateLevelForRegion(regionId);
-        return ResponseEntity.ok(level);
+        
+        LevelDTO dto = new LevelDTO(
+            level.getIdLevel(),
+            level.getRegion(),
+            level.getValue()           
+        );
+        return ResponseEntity.ok(dto);
     }
 }
