@@ -6,10 +6,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+
 @Repository
 public interface RegionRepository extends JpaRepository<Region, Integer> {
 
     @Query(value = "SELECT GET_REGION_BY_POINT(:lat, :lon) FROM dual", nativeQuery = true)
-    Integer findRegionByPoint(@Param("lat") double lat, @Param("lon") double lon);
+    Integer findRegionByPoint(@Param("lat") BigDecimal lat, @Param("lon") BigDecimal lon);
 
 }

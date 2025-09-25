@@ -1,18 +1,20 @@
 package org.example.tmsserver.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.math.BigDecimal;
 import java.util.List;
 
 public class RadarApiResponse {
-    private int count;
+    private Integer count;
     private DateRange date_range;
     private List<RadarData> data;
 
-    public int getCount() {
+    public Integer getCount() {
         return count;
     }
 
-    public void setCount(int count) {
+    public void setCount(Integer count) {
         this.count = count;
     }
 
@@ -61,7 +63,47 @@ public class RadarApiResponse {
         @JsonProperty("tipoVeiculo")
         private String tipoVeiculo;
         @JsonProperty("velocidade")
-        private int velocidade;
+        private Integer velocidade;
+        @JsonProperty("camera_latitude")
+        private BigDecimal latitude;
+        @JsonProperty("camera_longitude")
+        private BigDecimal longitude;
+        @JsonProperty("endereco")
+        private String endereco;
+        @JsonProperty("velocidadeRegulamentada")
+        private Integer limite;
+
+        public Integer getLimite() {
+            return limite;
+        }
+
+        public void setLimite(Integer limite) {
+            this.limite = limite;
+        }
+
+        public BigDecimal getLatitude() {
+            return latitude;
+        }
+
+        public void setLatitude(BigDecimal latitude) {
+            this.latitude = latitude;
+        }
+
+        public BigDecimal getLongitude() {
+            return longitude;
+        }
+
+        public void setLongitude(BigDecimal longitude) {
+            this.longitude = longitude;
+        }
+
+        public String getEndereco() {
+            return endereco;
+        }
+
+        public void setEndereco(String endereco) {
+            this.endereco = endereco;
+        }
 
         public String getCameraNumero() {
             return cameraNumero;
@@ -87,11 +129,11 @@ public class RadarApiResponse {
             this.tipoVeiculo = tipoVeiculo;
         }
 
-        public int getVelocidade() {
+        public Integer getVelocidade() {
             return velocidade;
         }
 
-        public void setVelocidade(int velocidade) {
+        public void setVelocidade(Integer velocidade) {
             this.velocidade = velocidade;
         }
     }
