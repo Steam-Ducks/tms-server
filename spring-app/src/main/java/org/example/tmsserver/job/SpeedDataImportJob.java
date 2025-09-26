@@ -26,10 +26,10 @@ public class SpeedDataImportJob {
     public void execute() {
         System.out.println("Inicializado importação de registros!");
 
-        //speedRecordService.clearSpeedRecords();
-        //speedRecordService.fetchAndSaveSpeedRecords();
-        //regionIndicatorService.calculateAndSaveRegionIndicators();
-        levelService.calculateLevelForRegion(1);
+        speedRecordService.clearSpeedRecords();
+        speedRecordService.fetchAndSaveSpeedRecords();
+        regionIndicatorService.calculateAndSaveRegionIndicators();
+        levelService.calculateLevelsForAllRegions();
 
         System.out.println("Finalizado importação de registros!");
     }
