@@ -1,5 +1,5 @@
 package org.example.tmsserver.service;
-
+import org.example.tmsserver.dto.ZoneLevelDTO;
 import org.example.tmsserver.entity.Indicator;
 import org.example.tmsserver.entity.Region;
 import org.example.tmsserver.entity.RegionIndicator;
@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -150,4 +151,42 @@ public class RegionIndicatorService {
             }
         }
     }
+     //s
+    public List<ZoneLevelDTO> getZoneLevels() {
+        System.out.println("Buscando dados de nível de zona para o mapa...");
+
+        Optional<Indicator> indicatorOpt = indicatorRepository.findByName("Average Speed");
+        if (indicatorOpt.isEmpty()) {
+            System.err.println("Indicator 'Average Speed' não encontrado. Retornando lista vazia.");
+            return new ArrayList<>();
+        }
+        Indicator averageSpeedIndicator = indicatorOpt.get();
+
+        List<Region> allRegions = regionRepository.findAll();
+        List<ZoneLevelDTO> zoneLevels = new ArrayList<>();
+        System.out.println("Encontradas " + allRegions.size() + " regiões. Buscando o último indicador para cada uma.");
+
+        for (Region region : allRegions) {
+            Optional<RegionIndicator> latestIndicatorOpt = regionIndicatorRepository
+                    .findTopByRegionAndIndicatorOrderByTimeDesc(region, averageSpeedIndicator);
+
+            int level = 0;
+            if (latestIndicatorOpt.isPresent()) {
+                level = latestIndicatorOpt.get().getValue();
+            } else {
+                System.out.println("Nenhum indicador 'Average Speed' encontrado para a região: " + region.getName() + ". Usando nível 0.");
+            }
+
+            ZoneLevelDTO dto = new ZoneLevelDTO(
+                String.valueOf(region.getIdRegion()),
+                region.getName(),
+                level
+            );
+            zoneLevels.add(dto);
+        }
+
+        System.out.println("Busca finalizada. Retornando " + zoneLevels.size() + " níveis de zona.");
+        return zoneLevels;
+    }
+
 }
