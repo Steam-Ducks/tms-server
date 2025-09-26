@@ -2,12 +2,15 @@ package org.example.tmsserver.service;
 
 import org.example.tmsserver.dto.RadarApiResponse;
 import org.example.tmsserver.entity.Camera;
+import org.example.tmsserver.entity.Region;
 import org.example.tmsserver.entity.SpeedRecord;
 import org.example.tmsserver.repository.CameraRepository;
 import org.example.tmsserver.repository.SpeedRecordRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.example.tmsserver.repository.RegionRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -21,16 +24,19 @@ public class SpeedRecordService {
     private final SpeedRecordRepository speedRecordRepository;
     private final RestTemplate restTemplate = new RestTemplate();
     private final CameraRepository cameraRepository;
+    private final RegionRepository regionRepository;
 
-    public SpeedRecordService(SpeedRecordRepository speedRecordRepository, CameraRepository cameraRepository) {
+    public SpeedRecordService(SpeedRecordRepository speedRecordRepository, CameraRepository cameraRepository, RegionRepository regionRepository) {
         this.speedRecordRepository = speedRecordRepository;
         this.cameraRepository = cameraRepository;
+        this.regionRepository = regionRepository;
     }
 
     public void clearSpeedRecords() {
         speedRecordRepository.deleteAllRecords();
     }
 
+    @Transactional
     public void fetchAndSaveSpeedRecords() {
         try {
             OffsetDateTime now = OffsetDateTime.now();
@@ -68,8 +74,39 @@ public class SpeedRecordService {
                                 .orElse(null);
 
                         if (camera == null) {
-                            //System.err.println("Câmera do radar não encontrada no banco: " + cameraId);
-                            return null;
+                            System.err.println("Câmera do radar não encontrada no banco: " + cameraId);
+
+                            BigDecimal lat = d.getLatitude();
+                            BigDecimal lon = d.getLongitude();
+                            Integer regionId = regionRepository.findRegionByPoint(lat, lon);
+
+                            if (regionId == null) {
+                                System.err.println("⚠️ Nenhuma região encontrada para coordenadas: lat=" + lat + ", lon=" + lon + ". Pulando registro.");
+                                return null;
+                            }
+
+
+                            Region region = null;
+                            if (regionId != null) {
+                                region = regionRepository.findById(regionId)
+                                        .orElse(null);
+                            }
+
+                            camera = new Camera();
+                            camera.setIdCamera(cameraId);
+                            camera.setLatitude(lat);
+                            camera.setLongitude(lon);
+                            camera.setBairro(d.getEndereco());
+                            camera.setSpeedLimit(d.getLimite());
+                            camera.setRegion(region);
+
+                            cameraRepository.save(camera);
+                            cameras.add(camera);
+
+                            System.out.println("Nova câmera cadastrada: " + camera.getIdCamera() +
+                                    ", Região: " + (region != null ? region.getIdRegion() : "null") +
+                                    ", Latitude: " + camera.getLatitude() +
+                                    ", Longitude: " + camera.getLongitude());
                         }
 
                         // Parse seguro da data
