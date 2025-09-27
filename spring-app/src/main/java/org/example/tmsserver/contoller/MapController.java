@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/map" ) // URL base para todos os endpoints deste controller
+@RequestMapping("/api/map" ) // URL base para os endpoints de mapa
 public class MapController {
 
     private final RegionIndicatorService regionIndicatorService;
@@ -21,9 +21,10 @@ public class MapController {
         this.regionIndicatorService = regionIndicatorService;
     }
 
-    @GetMapping("/zone-levels") // URL completa: /api/map/zone-levels
-    public ResponseEntity<List<ZoneLevelDTO>> getZoneLevels() {
-        List<ZoneLevelDTO> zoneLevels = regionIndicatorService.getZoneLevels();
+    @GetMapping("/levels") // s
+    public ResponseEntity<List<ZoneLevelDTO>> getMapLevels() {
+    
+        List<ZoneLevelDTO> zoneLevels = regionIndicatorService.getLatestRegionLevels();
         return ResponseEntity.ok(zoneLevels);
     }
 }

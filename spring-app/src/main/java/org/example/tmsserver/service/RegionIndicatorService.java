@@ -1,5 +1,6 @@
 package org.example.tmsserver.service;
 import org.example.tmsserver.dto.ZoneLevelDTO;
+import org.example.tmsserver.entity.AppLevel;
 import org.example.tmsserver.entity.Indicator;
 import org.example.tmsserver.entity.Region;
 import org.example.tmsserver.entity.RegionIndicator;
@@ -9,6 +10,7 @@ import org.example.tmsserver.repository.RegionRepository;
 import org.example.tmsserver.repository.SpeedRecordRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.example.tmsserver.repository.AppLevelRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -18,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class RegionIndicatorService {
@@ -26,15 +29,18 @@ public class RegionIndicatorService {
     private final RegionIndicatorRepository regionIndicatorRepository;
     private final RegionRepository regionRepository;
     private final IndicatorRepository indicatorRepository;
+    private final AppLevelRepository appLevelRepository;
 
     public RegionIndicatorService(SpeedRecordRepository speedRecordRepository,
                                   RegionIndicatorRepository regionIndicatorRepository,
                                   RegionRepository regionRepository,
+                                  AppLevelRepository appLevelRepository,
                                   IndicatorRepository indicatorRepository) {
         this.speedRecordRepository = speedRecordRepository;
         this.regionIndicatorRepository = regionIndicatorRepository;
         this.regionRepository = regionRepository;
         this.indicatorRepository = indicatorRepository;
+        this.appLevelRepository = appLevelRepository;
     }
 
     @Transactional
@@ -152,41 +158,30 @@ public class RegionIndicatorService {
         }
     }
      //s
-    public List<ZoneLevelDTO> getZoneLevels() {
-        System.out.println("Buscando dados de nível de zona para o mapa...");
+   public List<ZoneLevelDTO> getLatestRegionLevels() {
+    System.out.println("1. SERVICE: Recebi o pedido para buscar os últimos 6 níveis.");
 
-        Optional<Indicator> indicatorOpt = indicatorRepository.findByName("Average Speed");
-        if (indicatorOpt.isEmpty()) {
-            System.err.println("Indicator 'Average Speed' não encontrado. Retornando lista vazia.");
-            return new ArrayList<>();
-        }
-        Indicator averageSpeedIndicator = indicatorOpt.get();
+    // 2. SERVICE -> REPOSITORY: Pedindo os 6 últimos registros da tabela APP_LEVEL.
+    List<AppLevel> latestLevels = appLevelRepository.findTop6ByOrderByTimeDesc();
+    System.out.println("4. SERVICE: Recebi " + latestLevels.size() + " registros do repositório.");
 
-        List<Region> allRegions = regionRepository.findAll();
-        List<ZoneLevelDTO> zoneLevels = new ArrayList<>();
-        System.out.println("Encontradas " + allRegions.size() + " regiões. Buscando o último indicador para cada uma.");
+    // 5. SERVICE: Agora, vou transformar cada registro 'AppLevel' em um 'ZoneLevelDTO'.
+    return latestLevels.stream().map(appLevel -> {
+        
+        // Para cada 'appLevel', preciso buscar o nome da região.
+        // SERVICE -> REPOSITORY: Pedindo o nome da região com ID = appLevel.getIdRegion().
+        String regionName = regionRepository.findById(appLevel.getIdRegion().intValue())
+                                            .map(Region::getName) // Se encontrar, pega o nome.
+                                            .orElse("Região Desconhecida"); // Se não, usa um nome padrão.
 
-        for (Region region : allRegions) {
-            Optional<RegionIndicator> latestIndicatorOpt = regionIndicatorRepository
-                    .findTopByRegionAndIndicatorOrderByTimeDesc(region, averageSpeedIndicator);
+        System.out.println(" > Processando ID_REGION: " + appLevel.getIdRegion() + ", NOME: " + regionName + ", LEVEL: " + appLevel.getValue());
 
-            int level = 0;
-            if (latestIndicatorOpt.isPresent()) {
-                level = latestIndicatorOpt.get().getValue();
-            } else {
-                System.out.println("Nenhum indicador 'Average Speed' encontrado para a região: " + region.getName() + ". Usando nível 0.");
-            }
-
-            ZoneLevelDTO dto = new ZoneLevelDTO(
-                String.valueOf(region.getIdRegion()),
-                region.getName(),
-                level
-            );
-            zoneLevels.add(dto);
-        }
-
-        System.out.println("Busca finalizada. Retornando " + zoneLevels.size() + " níveis de zona.");
-        return zoneLevels;
-    }
-
+        // Criando o objeto final com todos os dados formatados.
+        return new ZoneLevelDTO(
+            String.valueOf(appLevel.getIdRegion()),
+            regionName,
+            appLevel.getValue() // O 'value' da APP_LEVEL já é o nível que queremos.
+        );
+    }).collect(Collectors.toList()); // Coleta tudo em uma lista final.
+}
 }
