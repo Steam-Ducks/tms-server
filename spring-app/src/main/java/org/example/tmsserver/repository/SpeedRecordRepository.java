@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Repository
-public interface SpeedRecordRepository extends JpaRepository<SpeedRecord, Long> {
+public interface SpeedRecordRepository extends JpaRepository<SpeedRecord, Integer> {
 
     @Modifying
     @Transactional
@@ -19,7 +19,7 @@ public interface SpeedRecordRepository extends JpaRepository<SpeedRecord, Long> 
     void deleteAllRecords();
 
     @Query("SELECT sr  FROM SpeedRecord sr JOIN sr.camera c JOIN c.region r WHERE r.idRegion = :regionId ")
-    List<SpeedRecord> findAllByRegionId(@Param("regionId") Long regionId);
+    List<SpeedRecord> findAllByRegionId(@Param("regionId") Integer regionId);
 
     @Query("SELECT c.region.idRegion, c.idCamera, c.speedLimit, COUNT(sr), SUM(sr.speed)\n" + "FROM SpeedRecord sr\n" + "JOIN sr.camera c\n" + "WHERE c.region.idRegion IS NOT NULL AND c.speedLimit IS NOT NULL\n" + "GROUP BY c.region.idRegion, c.idCamera, c.speedLimit")
     List<Object[]> findRegionCameraAggregates();

@@ -39,8 +39,8 @@ public class Region {
     }
 
     public Region(Integer idRegion, Geometry geolocation, String name,
-                  List<Camera> cameras, List<Level> levels,
-                  List<Role> roles, List<RegionIndicator> indicators) {
+            List<Camera> cameras, List<Level> levels,
+            List<Role> roles, List<RegionIndicator> indicators) {
         this.idRegion = idRegion;
         this.geolocation = geolocation;
         this.name = name;
