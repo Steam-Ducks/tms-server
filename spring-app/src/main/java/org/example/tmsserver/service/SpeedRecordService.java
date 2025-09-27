@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Random;
 
 @Service
 public class SpeedRecordService {
@@ -43,8 +44,15 @@ public class SpeedRecordService {
             OffsetDateTime initial = now.minusMinutes(10);
 
             // Para teste
-            String initialStr = "2025-08-16 15:05:00";
-            // Para produção
+            // Para teste - gera horário aleatório no mesmo dia
+            Random random = new Random();
+            int randomHour = random.nextInt(24);   // 0-23
+            int randomMinute = random.nextInt(60); // 0-59
+            int randomSecond = random.nextInt(60); // 0-59
+
+            String initialStr = String.format("2025-08-16 %02d:%02d:%02d", randomHour, randomMinute, randomSecond);
+            System.out.println("Usando horário aleatório para teste: " + initialStr);
+
             // String initialStr = initial.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
             String url = "https://mock-api-75a7.onrender.com/radares?initial_date=" + initialStr;

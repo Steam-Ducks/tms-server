@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.example.tmsserver.dto.ZoneLevelDTO;
 import org.example.tmsserver.entity.Level;
 import org.example.tmsserver.entity.Region;
 import org.example.tmsserver.entity.RegionIndicator;
@@ -35,6 +36,26 @@ public class LevelService {
         this.regionRepository = regionRepository;
         this.indicatorRepository = indicatorRepository;
     }
+
+    public List<ZoneLevelDTO> getLatestRegionLevels() {
+
+        List<Level> latestLevels = levelRepository.findTop6ByOrderByTimeDesc();
+
+        return latestLevels.stream().map(level -> {
+
+            String regionName = regionRepository.findById(level.getRegion().getIdRegion())
+                    .map(Region::getName)
+                    .orElse("Região Desconhecida");
+
+
+            return new ZoneLevelDTO(
+                    String.valueOf(level.getRegion().getIdRegion()),
+                    regionName,
+                    level.getValue()
+            );
+        }).collect(Collectors.toList());
+    }
+
     @Transactional
     public void calculateLevelsForAllRegions() {
         logger.info("=== Início do cálculo de níveis para todas as regiões ===");
@@ -123,10 +144,10 @@ public class LevelService {
 
 
     private int mapAverageSpeedToLevel(int avg) {
-        if (avg >= 85) return 1;
+        if (avg >= 77) return 1;
         if (avg >= 70) return 2;
-        if (avg >= 55) return 3;
-        if (avg >= 40) return 4;
+        if (avg >= 60) return 3;
+        if (avg >= 55) return 4;
         return 5;
     }
 
