@@ -4,11 +4,9 @@ import org.example.tmsserver.dto.LevelDTO;
 import org.example.tmsserver.entity.Level;
 import org.example.tmsserver.service.LevelService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/levels")
 public class LevelController {
@@ -20,7 +18,7 @@ public class LevelController {
     }
 
     @PostMapping("/{regionId}/calculate")
-    public ResponseEntity<LevelDTO> calculate(@PathVariable Integer regionId) {
+    public ResponseEntity<LevelDTO> calculate(@PathVariable("regionId") Integer regionId) {
         Level level = levelService.calculateLevelForRegion(regionId);
         
         LevelDTO dto = new LevelDTO(

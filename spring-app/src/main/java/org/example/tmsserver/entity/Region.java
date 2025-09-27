@@ -1,6 +1,11 @@
 package org.example.tmsserver.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.persistence.*;
+import org.example.tmsserver.serializer.GeometrySerializer;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.locationtech.jts.geom.Geometry;
@@ -18,6 +23,7 @@ public class Region {
 
     @Column(name = "geolocation", columnDefinition = "SDO_GEOMETRY")
     @JdbcTypeCode(SqlTypes.GEOMETRY)
+    @JsonSerialize(using = GeometrySerializer.class)
     private Geometry geolocation;
 
     @Column(name = "name")
@@ -27,6 +33,7 @@ public class Region {
     private List<Camera> cameras;
 
     @OneToMany(mappedBy = "region")
+    @JsonManagedReference
     private List<Level> levels;
 
     @OneToMany(mappedBy = "region")
