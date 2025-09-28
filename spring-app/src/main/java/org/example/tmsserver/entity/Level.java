@@ -1,5 +1,6 @@
 package org.example.tmsserver.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 
@@ -21,6 +22,7 @@ public class Level {
 
     @ManyToOne
     @JoinColumn(name = "id_region", nullable = false)
+    @JsonBackReference
     private Region region;
 
     public Level() {}

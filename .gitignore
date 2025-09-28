@@ -1,0 +1,15 @@
+# IDEs
+.vscode/
+.idea/
+*.iml
+
+# Build
+target/
+build/
+
+# Outros
+*.log
+*.class
+*.jar
+*.war
+*.ear
