@@ -1,7 +1,6 @@
 package org.example.tmsserver.repository;
 
 import java.util.List;
-
 import org.example.tmsserver.entity.RegionIndicator;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -14,4 +13,3 @@ public interface RegionIndicatorRepository extends JpaRepository<RegionIndicator
         " ORDER BY r.time DESC LIMIT :limit")
     List<RegionIndicator> findValuesByRegion(@Param("regionId") Integer regionId, @Param("limit") Integer limit);
 }
-
