@@ -145,7 +145,6 @@ public class LevelService {
     public Integer getCityLevel() {
         List<Level> latestLevels = levelRepository.findTop6ByOrderByTimeDesc();
 
-
         double average = latestLevels.stream()
                 .mapToInt(Level::getValue)
                 .average()
