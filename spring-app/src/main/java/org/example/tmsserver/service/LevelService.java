@@ -142,6 +142,17 @@ public class LevelService {
 
     }
 
+    public Integer getCityLevel() {
+        List<Level> latestLevels = levelRepository.findTop6ByOrderByTimeDesc();
+
+
+        double average = latestLevels.stream()
+                .mapToInt(Level::getValue)
+                .average()
+                .orElse(5.0);
+
+        return (int) Math.round(average);
+    }
 
     private int mapAverageSpeedToLevel(int avg) {
         if (avg >= 77) return 1;
