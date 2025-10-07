@@ -55,7 +55,7 @@ public class SpeedRecordService {
 
             // String initialStr = initial.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
-            String url = "https://mock-api-75a7.onrender.com/radares?initial_date=" + initialStr;
+            String url = "https://mock-api-75a7.onrender.com/radares?initial_date=" + initialStr + "&last_minutes=1";
             RadarApiResponse response = restTemplate.getForObject(url, RadarApiResponse.class);
 
             if (response == null || response.getData() == null) return;
@@ -138,7 +138,7 @@ public class SpeedRecordService {
                     .toList();
 
             if (!records.isEmpty()) {
-                speedRecordRepository.saveAll(records);
+                speedRecordRepository.saveAllInBatches(records);
                 System.out.println("Indicadores salvos com sucesso! Total: " + records.size());
             }
 
