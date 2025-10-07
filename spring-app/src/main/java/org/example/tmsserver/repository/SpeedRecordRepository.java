@@ -23,4 +23,19 @@ public interface SpeedRecordRepository extends JpaRepository<SpeedRecord, Intege
 
     @Query("SELECT c.region.idRegion, c.idCamera, c.speedLimit, COUNT(sr), SUM(sr.speed)\n" + "FROM SpeedRecord sr\n" + "JOIN sr.camera c\n" + "WHERE c.region.idRegion IS NOT NULL AND c.speedLimit IS NOT NULL\n" + "GROUP BY c.region.idRegion, c.idCamera, c.speedLimit")
     List<Object[]> findRegionCameraAggregates();
+
+    default void saveAllInBatches(List<SpeedRecord> records) {
+        final int batchSize = 100;
+        int totalBatches = (int) Math.ceil((double) records.size() / batchSize);
+
+        for (int i = 0; i < records.size(); i += batchSize) {
+            int endIndex = Math.min(i + batchSize, records.size());
+            List<SpeedRecord> batch = records.subList(i, endIndex);
+
+            saveAll(batch);
+
+            int currentBatch = (i / batchSize) + 1;
+            System.out.println("Lote " + currentBatch + "/" + totalBatches + " salvo (" + batch.size() + " registros)");
+        }
+    }
 }
