@@ -31,21 +31,22 @@ public class SecurityConfig {
                 .cors(cors -> {})
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-
-                        // Rotas que não precisam de autenticação
+                        // Paginas livres
                         .requestMatchers("/auth/**", "/error").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/managers/**").permitAll()
+
+                        // Paginas protegidas
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/managers/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/managers/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/managers/**").hasRole("ADMIN")
 
-                        // Rotas que precisam estar logadas
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .anyRequest().authenticated() // -> Isso significa todas que eu não listei antes
+                        // Tudo que nao foi listado acima e publico
+                        .anyRequest().permitAll()
                 )
-                .formLogin(form -> form.disable())
-                .httpBasic(basic -> basic.disable())
+                .formLogin(f -> f.disable())
+                .httpBasic(b -> b.disable())
                 .addFilterBefore(jwt, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
