@@ -3,6 +3,7 @@ package org.example.tmsserver.config;
 import org.example.tmsserver.security.JwtAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -24,20 +25,29 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwt) throws Exception {
+        return http
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> {})
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
+
+                        // Rotas que não precisam de autenticação
+                        .requestMatchers("/auth/**", "/error").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/managers/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/managers/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/managers/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/managers/**").hasRole("ADMIN")
+
+                        // Rotas que precisam estar logadas
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .anyRequest().authenticated()
+                        .anyRequest().authenticated() // -> Isso significa todas que eu não listei antes
                 )
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-
-        return http.build();
+                .addFilterBefore(jwt, UsernamePasswordAuthenticationFilter.class)
+                .build();
     }
 
     @Bean
