@@ -26,7 +26,7 @@ public class User {
 
     @Column(name = "phone_number", columnDefinition = "CHAR(11)")
     private String phoneNumber;
-
+    
     @Column(name = "username", nullable = false, unique = true)
     private String username;
 
@@ -42,6 +42,7 @@ public class User {
     public Integer getId() {
         return id;
     }
+
     public void setId(Integer id) {
         this.id = id;
     }
@@ -49,6 +50,7 @@ public class User {
     public Role getRole() {
         return role;
     }
+
     public void setRole(Role role) {
         this.role = role;
     }
@@ -56,6 +58,7 @@ public class User {
     public String getEmail() {
         return email;
     }
+
     public void setEmail(String email) {
         this.email = email;
     }
@@ -63,16 +66,21 @@ public class User {
     public String getPhoneNumber() {
         return phoneNumber;
     }
+
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
     }
 
+
     public String getUsername() { return username; }
+    
     public void setUsername(String username) { this.username = username; }
 
     public String getPassword() { return password; }
+   
     public void setPassword(String password) { this.password = password; }
 
     public Boolean getEnabled() { return enabled; }
+    
     public void setEnabled(Boolean enabled) { this.enabled = enabled; }
 }
