@@ -6,7 +6,8 @@ import jakarta.persistence.*;
 @Table(name = "app_user",
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_email", columnNames = "email"),
-                @UniqueConstraint(name = "uk_phone", columnNames = "phone_number")
+                @UniqueConstraint(name = "uk_phone", columnNames = "phone_number"),
+                @UniqueConstraint(name = "uk_username", columnNames = "username")
         })
 
 public class User {
@@ -16,7 +17,7 @@ public class User {
     @Column(name = "id_user")
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_role")
     private Role role;
 
@@ -31,6 +32,15 @@ public class User {
 
     @Column(name = "password")
     private String password;
+
+    @Column(name = "username", nullable = false, unique = true)
+    private String username;
+
+    @Column(name = "password", nullable = false)
+    private String password;
+
+    @Column(name = "enabled", nullable = false)
+    private Boolean enabled = true;
 
     public User() {
     }
@@ -82,4 +92,13 @@ public class User {
     public void setPassword(String password) {
         this.password = password;
     }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+
+    public Boolean getEnabled() { return enabled; }
+    public void setEnabled(Boolean enabled) { this.enabled = enabled; }
 }
