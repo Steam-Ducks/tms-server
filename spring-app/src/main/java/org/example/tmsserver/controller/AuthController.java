@@ -4,8 +4,8 @@ import org.example.tmsserver.dto.*;
 import org.example.tmsserver.entity.Role;
 import org.example.tmsserver.entity.User;
 import org.example.tmsserver.repository.RoleRepository;
-import org.example.tmsserver.repository.UserRepository;
 import org.example.tmsserver.security.JwtUtil;
+import org.example.tmsserver.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
@@ -17,14 +17,14 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/auth")
 public class AuthController {
 
-    private final UserRepository userRepo;
+    private final UserService userService;
     private final RoleRepository roleRepo;
     private final PasswordEncoder encoder;
     private final AuthenticationManager authManager;
     private final JwtUtil jwtUtil;
 
-    public AuthController(UserRepository userRepo, RoleRepository roleRepo, PasswordEncoder encoder, AuthenticationManager authManager, JwtUtil jwtUtil) {
-        this.userRepo = userRepo;
+    public AuthController(UserService userService, RoleRepository roleRepo, PasswordEncoder encoder, AuthenticationManager authManager, JwtUtil jwtUtil) {
+        this.userService = userService;
         this.roleRepo = roleRepo;
         this.encoder = encoder;
         this.authManager = authManager;
@@ -33,10 +33,10 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest req) {
-        if (userRepo.existsByUsername(req.username()))
+        if (userService.existsByUsername(req.username()))
             return ResponseEntity.status(409).body("username em uso");
 
-        if (req.email() != null && userRepo.existsByEmail(req.email()))
+        if (req.email() != null && userService.existsByEmail(req.email()))
             return ResponseEntity.status(409).body("email em uso");
 
         String normalizedPhone = null;
@@ -46,14 +46,15 @@ public class AuthController {
             if (normalizedPhone.length() != 11) {
                 return ResponseEntity.badRequest().body("phone_number inválido (esperado 11 dígitos)");
             }
-            if (userRepo.existsByPhoneNumber(normalizedPhone)) {
+            if (userService.existsByPhoneNumber(normalizedPhone)) {
                 return ResponseEntity.status(409).body("phone_number em uso");
             }
         }
 
+        // Since all users are managers now, assign ROLE_ADMIN by default
         Role role = (req.roleId() != null)
                 ? roleRepo.findById(req.roleId()).orElse(null)
-                : roleRepo.findByDescription("ROLE_USER").orElse(null);
+                : roleRepo.findByDescription("ROLE_ADMIN").orElse(null);
 
         if (role == null) return ResponseEntity.badRequest().body("role inválido");
 
@@ -69,7 +70,7 @@ public class AuthController {
             u.setPhoneNumber(normalizedPhone);
         }
 
-        userRepo.save(u);
+        userService.saveUser(u);
         return ResponseEntity.ok().build();
     }
 
