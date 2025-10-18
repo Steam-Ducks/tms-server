@@ -38,12 +38,30 @@ public class SpeedRecordService {
     }
 
     @Transactional
-    public void fetchAndSaveSpeedRecords() {
+    public void fetchAndReplaceSpeedRecords() {
+        try {
+            List<SpeedRecord> newRecords = fetchSpeedRecordsFromApi();
+
+            if (!newRecords.isEmpty()) {
+                speedRecordRepository.deleteAllRecords();
+                speedRecordRepository.saveAllInBatches(newRecords);
+                System.out.println("Records replaced successfully! Total: " + newRecords.size());
+            } else {
+                System.out.println("No new records to replace");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error during atomic record replacement: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    private List<SpeedRecord> fetchSpeedRecordsFromApi() {
         try {
             OffsetDateTime now = OffsetDateTime.now();
             OffsetDateTime initial = now.minusMinutes(10);
 
-            // Para teste
             // Para teste - gera horário aleatório no mesmo dia
             Random random = new Random();
             int randomHour = random.nextInt(24);   // 0-23
@@ -53,12 +71,10 @@ public class SpeedRecordService {
             String initialStr = String.format("2025-08-16 %02d:%02d:%02d", randomHour, randomMinute, randomSecond);
             System.out.println("Usando horário aleatório para teste: " + initialStr);
 
-            // String initialStr = initial.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-
-            String url = "https://mock-api-75a7.onrender.com/radares?initial_date=" + initialStr + "&last_minutes=1";
+            String url = "https://mock-api-75a7.onrender.com/radares?initial_date=" + initialStr + "&last_minutes=2";
             RadarApiResponse response = restTemplate.getForObject(url, RadarApiResponse.class);
 
-            if (response == null || response.getData() == null) return;
+            if (response == null || response.getData() == null) return List.of();
 
             // Lista de IDs das câmeras
             List<String> cameraIds = response.getData().stream()
@@ -73,7 +89,7 @@ public class SpeedRecordService {
                     .toList());
 
             // Mapeamento dos registros
-            List<SpeedRecord> records = response.getData().stream()
+            return response.getData().stream()
                     .map(d -> {
                         String cameraId = d.getCameraNumero().trim();
                         Camera camera = cameras.stream()
@@ -92,7 +108,6 @@ public class SpeedRecordService {
                                 System.err.println("⚠️ Nenhuma região encontrada para coordenadas: lat=" + lat + ", lon=" + lon + ". Pulando registro.");
                                 return null;
                             }
-
 
                             Region region = null;
                             if (regionId != null) {
@@ -137,17 +152,23 @@ public class SpeedRecordService {
                     .filter(r -> r != null)
                     .toList();
 
-            if (!records.isEmpty()) {
-                speedRecordRepository.saveAllInBatches(records);
-                System.out.println("Indicadores salvos com sucesso! Total: " + records.size());
-            }
-
         } catch (HttpServerErrorException e) {
             System.err.println("Erro HTTP da API: " + e.getStatusCode() + " - " + e.getResponseBodyAsString());
+            return List.of();
         } catch (Exception e) {
             System.err.println("Erro ao processar registros: " + e.getMessage());
             e.printStackTrace();
+            return List.of();
         }
     }
 
+    @Transactional
+    public void fetchAndSaveSpeedRecords() {
+        List<SpeedRecord> records = fetchSpeedRecordsFromApi();
+
+        if (!records.isEmpty()) {
+            speedRecordRepository.saveAllInBatches(records);
+            System.out.println("Indicadores salvos com sucesso! Total: " + records.size());
+        }
+    }
 }

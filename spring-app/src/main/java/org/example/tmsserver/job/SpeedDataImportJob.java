@@ -26,7 +26,7 @@ public class SpeedDataImportJob {
     }
 
     // Para teste, cron = "0 * * * * *" repete a cada minuto
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "0 */2 * * * ?")
     public void execute() {
         if (!"MAIN".equalsIgnoreCase(serverRole)) {
             return;
@@ -34,8 +34,7 @@ public class SpeedDataImportJob {
 
         System.out.println("Inicializado importação de registros!");
 
-        speedRecordService.clearSpeedRecords();
-        speedRecordService.fetchAndSaveSpeedRecords();
+        speedRecordService.fetchAndReplaceSpeedRecords();
         regionIndicatorService.calculateAndSaveRegionIndicators();
         levelService.calculateLevelsForAllRegions();
 

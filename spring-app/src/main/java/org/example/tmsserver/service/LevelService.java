@@ -2,13 +2,16 @@ package org.example.tmsserver.service;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.example.tmsserver.dto.ZoneLevelDTO;
 import org.example.tmsserver.entity.Level;
 import org.example.tmsserver.entity.Region;
 import org.example.tmsserver.entity.RegionIndicator;
+import org.example.tmsserver.repository.CameraRepository;
 import org.example.tmsserver.repository.IndicatorRepository;
 import org.example.tmsserver.repository.LevelRepository;
 import org.example.tmsserver.repository.RegionIndicatorRepository;
@@ -27,31 +30,75 @@ public class LevelService {
     private final LevelRepository levelRepository;
     private final RegionRepository regionRepository;
     private final IndicatorRepository indicatorRepository;
+    private final CameraRepository cameraRepository;
 
     public LevelService(RegionIndicatorRepository regionIndicatorRepository,
                         LevelRepository levelRepository,
-                        RegionRepository regionRepository, IndicatorRepository indicatorRepository) {
+                        RegionRepository regionRepository, IndicatorRepository indicatorRepository,
+                        CameraRepository cameraRepository) {
         this.regionIndicatorRepository = regionIndicatorRepository;
         this.levelRepository = levelRepository;
         this.regionRepository = regionRepository;
         this.indicatorRepository = indicatorRepository;
+        this.cameraRepository = cameraRepository;
     }
 
     public List<ZoneLevelDTO> getLatestRegionLevels() {
-
         List<Level> latestLevels = levelRepository.findTop6ByOrderByTimeDesc();
 
         return latestLevels.stream().map(level -> {
+            Integer regionId = level.getRegion().getIdRegion();
 
-            String regionName = regionRepository.findById(level.getRegion().getIdRegion())
+            String regionName = regionRepository.findById(regionId)
                     .map(Region::getName)
                     .orElse("Região Desconhecida");
 
+            // Get camera data for this region
+            List<Object[]> cameraData = cameraRepository.findCamerasWithStatsForRegion(regionId);
+
+            // Group cameras by base ID (remove _1, _2, etc. suffixes) and aggregate their speeds
+            Map<String, List<Object[]>> groupedCameras = cameraData.stream()
+                .collect(Collectors.groupingBy(row -> {
+                    String cameraId = row[0] != null ? row[0].toString() : "";
+                    // Remove suffix like _1, _2, _3, etc.
+                    return cameraId.replaceAll("_\\d+$", "");
+                }));
+
+            List<Map<String, Object>> cameras = groupedCameras.entrySet().stream().map(entry -> {
+                String baseCameraId = entry.getKey();
+                List<Object[]> cameraGroup = entry.getValue();
+
+                Map<String, Object> cameraMap = new HashMap<>();
+
+                // Use data from the first camera in the group for static fields
+                Object[] firstCamera = cameraGroup.get(0);
+                java.math.BigDecimal latitude = firstCamera[1] != null ? (java.math.BigDecimal) firstCamera[1] : null;
+                java.math.BigDecimal longitude = firstCamera[2] != null ? (java.math.BigDecimal) firstCamera[2] : null;
+                String address = firstCamera[3] != null ? firstCamera[3].toString() : null;
+                Integer speedLimit = firstCamera[4] != null ? ((Number) firstCamera[4]).intValue() : null;
+
+                // Calculate average speed across all cameras in the group
+                Double avgSpeed = cameraGroup.stream()
+                    .filter(row -> row[5] != null)
+                    .mapToDouble(row -> ((Number) row[5]).doubleValue())
+                    .average()
+                    .orElse(0.0);
+
+                cameraMap.put("id", baseCameraId);
+                cameraMap.put("latitude", latitude);
+                cameraMap.put("longitude", longitude);
+                cameraMap.put("address", address);
+                cameraMap.put("averageSpeed", Math.round(avgSpeed * 100.0) / 100.0);
+                cameraMap.put("maxSpeed", speedLimit);
+
+                return cameraMap;
+            }).collect(Collectors.toList());
 
             return new ZoneLevelDTO(
-                    String.valueOf(level.getRegion().getIdRegion()),
+                    String.valueOf(regionId),
                     regionName,
-                    level.getValue()
+                    level.getValue(),
+                    cameras
             );
         }).collect(Collectors.toList());
     }

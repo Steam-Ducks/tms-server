@@ -1,10 +1,14 @@
 package org.example.tmsserver.dto;
 
+import java.util.List;
+import java.util.Map;
+
 public class ZoneLevelDTO {
 
     private String id;
     private String name;
     private int level;
+    private List<Map<String, Object>> cameras;
 
     // Construtor padrão (obrigatório para o Spring)
     public ZoneLevelDTO() {
@@ -15,6 +19,14 @@ public class ZoneLevelDTO {
         this.id = id;
         this.name = capitalizeWords(name);
         this.level = level;
+    }
+
+    // Construtor com cameras
+    public ZoneLevelDTO(String id, String name, int level, List<Map<String, Object>> cameras) {
+        this.id = id;
+        this.name = capitalizeWords(name);
+        this.level = level;
+        this.cameras = cameras;
     }
 
     private String capitalizeWords(String input) {
@@ -69,5 +81,13 @@ public class ZoneLevelDTO {
 
     public void setLevel(int level) {
         this.level = level;
+    }
+
+    public List<Map<String, Object>> getCameras() {
+        return cameras;
+    }
+
+    public void setCameras(List<Map<String, Object>> cameras) {
+        this.cameras = cameras;
     }
 }
