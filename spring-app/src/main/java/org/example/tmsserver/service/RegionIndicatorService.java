@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.HashSet;
 
 @Service
 public class RegionIndicatorService {
@@ -42,6 +44,8 @@ public class RegionIndicatorService {
         calculateAverageSpeedIndicator();
 
         calculateComplianceRateIndicator();
+
+        calculateTrafficDensityIndicator();
 
         System.out.println("Processamento de todos os indicadores finalizado!");
     }
@@ -164,6 +168,58 @@ public class RegionIndicatorService {
         }
 
         return complianceMap;
+    }
+
+    // TRAFFIC DENSITY METHOD
+
+    private void calculateTrafficDensityIndicator() {
+        System.out.println("Calculando indicador: Traffic Density");
+
+        Optional<Indicator> indicatorOpt = indicatorRepository.findByName("Traffic Density");
+
+        if (indicatorOpt.isEmpty()) {
+            System.err.println("Indicator 'Traffic Density' not found.");
+            return;
+        }
+
+        Indicator indicatorEntity = indicatorOpt.get();
+
+        List<Object[]> data = speedRecordRepository.findRegionCameraAggregates();
+        System.out.println("Dados retornados: " + data.size() + " registros");
+
+        Map<Integer, BigDecimal[]> regionMap = calculateTrafficDensityByRegion(data);
+
+        saveRegionIndicators(regionMap, indicatorEntity);
+
+        System.out.println("Indicador Traffic Density processado!");
+    }
+
+    private Map<Integer, BigDecimal[]> calculateTrafficDensityByRegion(List<Object[]> data) {
+
+        Map<Integer, BigDecimal> totalRecordsMap = new HashMap<>();
+        Map<Integer, Set<String>> camerasMap = new HashMap<>();
+
+        for (Object[] row : data) {
+            Integer regionId = ((Number) row[0]).intValue();
+            String cameraId = row[1].toString();
+            BigDecimal count = new BigDecimal(((Number) row[3]).longValue());
+
+            totalRecordsMap.put(regionId, totalRecordsMap.getOrDefault(regionId, BigDecimal.ZERO).add(count));
+
+            camerasMap.putIfAbsent(regionId, new HashSet<>());
+            camerasMap.get(regionId).add(cameraId);
+        }
+
+        Map<Integer, BigDecimal[]> trafficDensityMap = new HashMap<>();
+        for (Integer regionId : totalRecordsMap.keySet()) {
+            BigDecimal totalRecords = totalRecordsMap.get(regionId);
+            BigDecimal numCameras = BigDecimal.valueOf(camerasMap.get(regionId).size());
+            BigDecimal density = totalRecords.divide(numCameras, 6, RoundingMode.HALF_UP);
+
+            trafficDensityMap.put(regionId, new BigDecimal[]{density, BigDecimal.valueOf(1)});
+        }
+
+        return trafficDensityMap;
     }
 
     // SAVING INDICATORS IN DATABASE METHOD
