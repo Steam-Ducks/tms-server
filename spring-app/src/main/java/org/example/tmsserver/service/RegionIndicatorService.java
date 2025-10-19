@@ -41,10 +41,12 @@ public class RegionIndicatorService {
 
         calculateAverageSpeedIndicator();
 
-        //future indicators here
+        calculateComplianceRateIndicator();
 
         System.out.println("Processamento de todos os indicadores finalizado!");
     }
+
+    // AVERAGE SPEED METHOD
 
     private void calculateAverageSpeedIndicator() {
         System.out.println("Calculando indicador: Average Speed");
@@ -103,6 +105,68 @@ public class RegionIndicatorService {
 
         return regionMap;
     }
+
+    // COMPLIANCE RATE METHOD
+
+    private void calculateComplianceRateIndicator() {
+        System.out.println("Calculando indicador: Compliance Rate");
+
+        Optional<Indicator> indicatorOpt = indicatorRepository.findByName("Compliance Rate");
+
+        if (indicatorOpt.isEmpty()) {
+            System.err.println("Indicator 'Compliance Rate' not found.");
+            return;
+        }
+
+        Indicator indicatorEntity = indicatorOpt.get();
+
+        List<Object[]> data = speedRecordRepository.findRegionCameraAggregates();
+        System.out.println("Dados retornados: " + data.size() + " registros");
+
+        Map<Integer, BigDecimal[]> regionMap = calculateComplianceRateByRegion(data);
+
+        saveRegionIndicators(regionMap, indicatorEntity);
+
+        System.out.println("Indicador Compliance Rate processado!");
+    }
+
+    private Map<Integer, BigDecimal[]> calculateComplianceRateByRegion(List<Object[]> data) {
+
+        Map<Integer, BigDecimal[]> tempMap = new HashMap<>();
+
+        for (Object[] row : data) {
+            try {
+                Integer regionId = ((Number) row[0]).intValue();
+                BigDecimal countAbove = new BigDecimal(((Number) row[5]).longValue());
+                BigDecimal totalCount = new BigDecimal(((Number) row[3]).longValue());
+
+                tempMap.putIfAbsent(regionId, new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
+                BigDecimal[] vals = tempMap.get(regionId);
+
+                vals[0] = vals[0].add(countAbove);
+                vals[1] = vals[1].add(totalCount);
+
+            } catch (Exception e) {
+                System.err.println("Erro processando linha: " + e.getMessage());
+            }
+        }
+
+        Map<Integer, BigDecimal[]> complianceMap = new HashMap<>();
+        for (Map.Entry<Integer, BigDecimal[]> entry : tempMap.entrySet()) {
+            BigDecimal countAboveSum = entry.getValue()[0];
+            BigDecimal totalCountSum = entry.getValue()[1];
+
+            BigDecimal rate = countAboveSum.divide(totalCountSum, 6, RoundingMode.HALF_UP)
+                    .multiply(BigDecimal.valueOf(100))
+                    .setScale(2, RoundingMode.HALF_UP);
+
+            complianceMap.put(entry.getKey(), new BigDecimal[]{rate, BigDecimal.valueOf(1)});
+        }
+
+        return complianceMap;
+    }
+
+    // SAVING INDICATORS IN DATABASE METHOD
 
     private void saveRegionIndicators(Map<Integer, BigDecimal[]> regionMap, Indicator indicator) {
         OffsetDateTime now = OffsetDateTime.now();
