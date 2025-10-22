@@ -11,6 +11,10 @@ import org.example.tmsserver.dto.ZoneLevelDTO;
 import org.example.tmsserver.entity.Level;
 import org.example.tmsserver.entity.Region;
 import org.example.tmsserver.entity.RegionIndicator;
+import org.example.tmsserver.indicators.AverageSpeedCalculator;
+import org.example.tmsserver.indicators.ComplianceRateCalculator;
+import org.example.tmsserver.indicators.IndicatorCalculator;
+import org.example.tmsserver.indicators.TrafficDensityCalculator;
 import org.example.tmsserver.repository.CameraRepository;
 import org.example.tmsserver.repository.IndicatorRepository;
 import org.example.tmsserver.repository.LevelRepository;
@@ -31,6 +35,12 @@ public class LevelService {
     private final RegionRepository regionRepository;
     private final IndicatorRepository indicatorRepository;
     private final CameraRepository cameraRepository;
+
+    private static final Map<String, Double> INDICATOR_WEIGHTS = Map.of(
+            "Average Speed", 0.5,
+            "Compliance Rate", 0.3,
+            "Traffic Density", 0.2
+    );
 
     public LevelService(RegionIndicatorRepository regionIndicatorRepository,
                         LevelRepository levelRepository,
@@ -124,41 +134,48 @@ public class LevelService {
 
     @Transactional
     public Level calculateLevelForRegion(Integer regionId) {
+
         logger.info("=== Início do cálculo de nível para região ID: {} ===", regionId);
         System.out.println("DEBUG: Recebido regionId -> " + regionId);
-        List<Integer> indicators = new ArrayList<>();
-        // Buscar valores do indicador
+
+        List<IndicatorCalculator> calculators = List.of(
+                new AverageSpeedCalculator(),
+                new ComplianceRateCalculator(),
+                new TrafficDensityCalculator()
+        );
+
         List<RegionIndicator> regionIndicators = regionIndicatorRepository.findValuesByRegion(regionId, countIndicators());
 
-        RegionIndicator averageSpeedIndicator = regionIndicators.stream()
-            .filter(ri -> "Average Speed".equals(ri.getIndicator().getName()))
-            .findFirst()
-            .orElse(null);
+        Map<String, Integer> indicatorLevels = new HashMap<>();
 
-        if (averageSpeedIndicator == null) {
-            System.out.println("DEBUG: Indicador AverageSpeed não encontrado para a região -> " + regionId);
-            logger.warn("Indicador AverageSpeed não encontrado para a região {}", regionId);
+        for (IndicatorCalculator calculator : calculators) {
+            RegionIndicator ri = regionIndicators.stream()
+                    .filter(r -> r.getIndicator().getName().equals(calculator.getIndicatorName()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (ri != null) {
+                indicatorLevels.put(calculator.getIndicatorName(), calculator.mapValueToLevel(ri.getValue()));
+            } else {
+                logger.warn("Indicador {} não encontrado para a região {}", calculator.getIndicatorName(), regionId);
+            }
         }
 
-        int averageSpeedLevel = mapAverageSpeedToLevel(averageSpeedIndicator.getValue());
-        indicators.add(averageSpeedLevel);
-
-        int levelValue = accumulateLevel(indicators);
+        int levelValue = accumulateLevel(indicatorLevels);
 
         System.out.println("DEBUG: Nível mapeado -> " + levelValue);
         logger.info("Nível determinado: {}", levelValue);
 
 
         Region region = regionRepository.findById(regionId)
-            .orElseThrow(() -> {
-                System.out.println("DEBUG: Região não encontrada para o ID -> " + regionId);
-                logger.error("Região não encontrada para ID {}", regionId);
-                return new IllegalArgumentException("Região não encontrada");
-            });
+                .orElseThrow(() -> {
+                    System.out.println("DEBUG: Região não encontrada para o ID -> " + regionId);
+                    logger.error("Região não encontrada para ID {}", regionId);
+                    return new IllegalArgumentException("Região não encontrada");
+                });
         System.out.println("DEBUG: Região encontrada: " + region.getName());
         logger.info("Região encontrada: {}", region.getName());
 
-        // Criar e salvar Level
         Level level = new Level();
         level.setValue(levelValue);
         level.setTime(OffsetDateTime.now());
@@ -172,21 +189,25 @@ public class LevelService {
         return savedLevel;
     }
 
-    private int accumulateLevel(List<Integer> indicators) {
-        double average = indicators.stream()
-                .mapToInt(Integer::intValue)
-                .average()
-                .orElse(0.0);
+    private int accumulateLevel(Map<String, Integer> indicatorLevels) {
+        double weightedSum = 0.0;
+        double totalWeight = 0.0;
 
-        int floor = (int) Math.floor(average);
-        double decimal = average - floor;
+        for (Map.Entry<String, Integer> entry : indicatorLevels.entrySet()) {
+            String indicatorName = entry.getKey();
+            int level = entry.getValue();
+            double weight = INDICATOR_WEIGHTS.getOrDefault(indicatorName, 1.0);
 
-        if (decimal < 0.4) {
-            return floor;
-        } else {
-            return floor + 1;
+            weightedSum += level * weight;
+            totalWeight += weight;
         }
 
+        double weightedAverage = totalWeight > 0 ? weightedSum / totalWeight : 0.0;
+
+        int floor = (int) Math.floor(weightedAverage);
+        double decimal = weightedAverage - floor;
+
+        return (decimal < 0.4) ? floor : floor + 1;
     }
 
     public Integer getCityLevel() {
@@ -198,14 +219,6 @@ public class LevelService {
                 .orElse(5.0);
 
         return (int) Math.round(average);
-    }
-
-    private int mapAverageSpeedToLevel(int avg) {
-        if (avg >= 77) return 1;
-        if (avg >= 70) return 2;
-        if (avg >= 60) return 3;
-        if (avg >= 55) return 4;
-        return 5;
     }
 
     private int countIndicators() {
