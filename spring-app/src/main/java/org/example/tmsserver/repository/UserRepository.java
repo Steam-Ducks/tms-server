@@ -8,7 +8,7 @@ import java.util.Optional; // Mantenha esta importação se for necessária para
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
-    // Métodos da branch dev
+
     Optional<User> findByUsername(String username);
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
