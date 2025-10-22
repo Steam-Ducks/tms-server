@@ -153,6 +153,6 @@ public class UserService {
 
     private ManagerResponseDTO convertToResponseDTO(User user) {
         String roleDescription = user.getRole() != null ? user.getRole().getDescription() : "N/A";
-        return new ManagerResponseDTO(user.getId(), user.getEmail(), user.getPhoneNumber(), roleDescription);
+        return new ManagerResponseDTO(user.getId(), user.getUsername(), user.getEmail(), user.getPhoneNumber(), roleDescription);
     }
 }
