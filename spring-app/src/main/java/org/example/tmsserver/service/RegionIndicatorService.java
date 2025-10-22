@@ -161,7 +161,6 @@ public class RegionIndicatorService {
             BigDecimal totalCountSum = entry.getValue()[1];
 
             BigDecimal rate = countAboveSum.divide(totalCountSum, 6, RoundingMode.HALF_UP)
-                    .multiply(BigDecimal.valueOf(100))
                     .setScale(2, RoundingMode.HALF_UP);
 
             complianceMap.put(entry.getKey(), new BigDecimal[]{rate, BigDecimal.valueOf(1)});
@@ -214,7 +213,9 @@ public class RegionIndicatorService {
         for (Integer regionId : totalRecordsMap.keySet()) {
             BigDecimal totalRecords = totalRecordsMap.get(regionId);
             BigDecimal numCameras = BigDecimal.valueOf(camerasMap.get(regionId).size());
-            BigDecimal density = totalRecords.divide(numCameras, 6, RoundingMode.HALF_UP);
+            BigDecimal density = totalRecords
+                    .divide(numCameras, 6, RoundingMode.HALF_UP)
+                    .divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP);
 
             trafficDensityMap.put(regionId, new BigDecimal[]{density, BigDecimal.valueOf(1)});
         }
