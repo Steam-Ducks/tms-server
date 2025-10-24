@@ -35,6 +35,7 @@ public class LevelService {
     private final RegionRepository regionRepository;
     private final IndicatorRepository indicatorRepository;
     private final CameraRepository cameraRepository;
+    private final AlertMonitorService alertMonitorService;
 
     private static final Map<String, Double> INDICATOR_WEIGHTS = Map.of(
             "Average Speed", 0.5,
@@ -45,12 +46,13 @@ public class LevelService {
     public LevelService(RegionIndicatorRepository regionIndicatorRepository,
                         LevelRepository levelRepository,
                         RegionRepository regionRepository, IndicatorRepository indicatorRepository,
-                        CameraRepository cameraRepository) {
+                        CameraRepository cameraRepository, AlertMonitorService alertMonitorService) {
         this.regionIndicatorRepository = regionIndicatorRepository;
         this.levelRepository = levelRepository;
         this.regionRepository = regionRepository;
         this.indicatorRepository = indicatorRepository;
         this.cameraRepository = cameraRepository;
+        this.alertMonitorService = alertMonitorService;
     }
 
     public List<ZoneLevelDTO> getLatestRegionLevels() {
@@ -185,6 +187,8 @@ public class LevelService {
         System.out.println("DEBUG: Level salvo -> " + savedLevel);
         logger.info("Level salvo com sucesso: {}", savedLevel);
 
+        checkAndTriggerAlerts(region, levelValue);
+
         logger.info("=== Fim do cálculo de nível para região ID: {} ===", regionId);
         return savedLevel;
     }
@@ -223,5 +227,44 @@ public class LevelService {
 
     private int countIndicators() {
         return (int) indicatorRepository.count();
+    }
+
+    private void checkAndTriggerAlerts(Region region, int levelValue) {
+        if (levelValue >= 4) {
+            String severity = getSeverityDescription(levelValue);
+            String description = getLevelDescription(levelValue);
+
+            logger.warn("🚨 Nível crítico detectado! Região: {}, Nível: {}", region.getName(), levelValue);
+            System.out.println("🔥 DEBUG: Chamando alertService.sendCriticalAlert para região: " + region.getName());
+
+            // Disparar alerta via Telegram
+            alertMonitorService.sendCriticalAlert(region, levelValue, severity, description);
+
+            System.out.println("✅ DEBUG: alertService.sendCriticalAlert concluído");
+        } else {
+            System.out.println("ℹ️  DEBUG: Nível " + levelValue + " não é crítico para região: " + region.getName());
+        }
+    }
+
+    private String getSeverityDescription(int level) {
+        return switch (level) {
+            case 1 -> "BOm demais";
+            case 2 -> "Regular";
+            case 3 -> "Médio";
+            case 4 -> "ALTO";
+            case 5 -> "MUITO ALTO";
+            default -> "MODERADO";
+        };
+    }
+
+    private String getLevelDescription(int level) {
+        return switch (level) {
+            case 1 -> "Tráfego livre";
+            case 2 -> "Tráfego fluindo";
+            case 3 -> "Tráfego moderado";
+            case 4 -> "Tráfego intenso";
+            case 5 -> "Congestionamento crítico";
+            default -> "Nível desconhecido";
+        };
     }
 }

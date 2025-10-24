@@ -1,27 +1,35 @@
 package org.example.tmsserver.service;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Service
 public class TelegramService {
 
-    @Value("${telegram.bot.token}")
-    private String botToken;
+    private final TelegramLongPollingBot bot;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    public TelegramService(@Lazy TelegramLongPollingBot bot) {
+        this.bot = bot;
+    }
 
-    public void sendMessage(Long chatId, String message) {
-        String url = String.format(
-                "https://api.telegram.org/bot%s/sendMessage?chat_id=%d&text=%s",
-                botToken, chatId, message.replace(" ", "%20")
-        );
+    public void sendMessage(Long chatId, String text) {
+        System.out.println("🔥 DEBUG: TelegramService.sendMessage chamado para chatId: " + chatId);
+
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId.toString());
+        message.setText(text);
+        message.enableMarkdown(true);
 
         try {
-            restTemplate.getForEntity(url, String.class);
-        } catch (Exception e) {
-            System.err.println("Erro ao enviar mensagem: " + e.getMessage());
+            System.out.println("🔥 DEBUG: Tentando executar sendMessage...");
+            bot.execute(message);
+            System.out.println("✅ DEBUG: Mensagem enviada com SUCESSO para chatId: " + chatId);
+        } catch (TelegramApiException e) {
+            System.err.println("❌ ERRO ao enviar mensagem para chatId " + chatId + ": " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
