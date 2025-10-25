@@ -96,6 +96,12 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username já existe.");
         }
 
+        if (requestDTO.getRoleId() != null) {
+            Role newRole = roleRepository.findById(requestDTO.getRoleId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Role com ID " + requestDTO.getRoleId() + " não encontrado."));
+            existingUser.setRole(newRole);
+        }
+
         if (!existingUser.getEmail().equals(requestDTO.getEmail()) &&
             userRepository.existsByEmail(requestDTO.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email já existe.");

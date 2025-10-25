@@ -36,7 +36,7 @@ public class Region {
     @JsonManagedReference
     private List<Level> levels;
 
-    @OneToMany(mappedBy = "region")
+    @ManyToMany(mappedBy = "regions")
     private List<Role> roles;
 
     @OneToMany(mappedBy = "region")

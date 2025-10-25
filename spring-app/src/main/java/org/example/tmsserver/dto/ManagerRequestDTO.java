@@ -6,6 +6,7 @@ public class ManagerRequestDTO {
     private String phoneNumber;
     private String username;
     private String password;
+    private Integer roleId;
 
     public String getEmail() {
         return email;
@@ -37,5 +38,13 @@ public class ManagerRequestDTO {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Integer getRoleId() {
+        return roleId;
+    }
+
+    public void setRoleId(Integer roleId) {
+        this.roleId = roleId;
     }
 }

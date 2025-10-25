@@ -15,9 +15,13 @@ public class Role {
     @Column(name = "description")
     private String description;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "id_region")
-    private Region region;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "role_region",
+        joinColumns = @JoinColumn(name = "id_role"),
+        inverseJoinColumns = @JoinColumn(name = "id_region")
+    )
+    private List<Region> regions;
 
     @OneToMany(mappedBy = "role", cascade = CascadeType.ALL)
     private List<User> users;
@@ -25,9 +29,9 @@ public class Role {
     public Role() {
     }
 
-    public Role(String description, Region region) {
+    public Role(String description, List<Region> regions) {
         this.description = description;
-        this.region = region;
+        this.regions = regions;
     }
 
     public Integer getId() {
@@ -46,12 +50,12 @@ public class Role {
         this.description = description;
     }
 
-    public Region getRegion() {
-        return region;
+    public List<Region> getRegions() {
+        return regions;
     }
 
-    public void setRegion(Region region) {
-        this.region = region;
+    public void setRegions(List<Region> regions) {
+        this.regions = regions;
     }
 
     public List<User> getUsers() {

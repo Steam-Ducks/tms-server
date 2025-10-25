@@ -1,5 +1,6 @@
 package org.example.tmsserver.service;
 
+import org.example.tmsserver.dto.RegionResponseDTO;
 import org.example.tmsserver.dto.RoleRequestDTO;
 import org.example.tmsserver.dto.RoleResponseDTO;
 import org.example.tmsserver.entity.Region;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class RoleService {
@@ -29,10 +31,13 @@ public class RoleService {
         if (roleRepository.existsByDescription(dto.getDescription())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Descrição já existe.");
         }
-        Region region = regionRepository.findById(dto.getRegionId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Região inválida."));
 
-        Role role = new Role(dto.getDescription(), region);
+        List<Region> regions = regionRepository.findAllById(dto.getRegionIds());
+        if (regions.size() != dto.getRegionIds().size()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Uma ou mais regiões são inválidas.");
+        }
+
+        Role role = new Role(dto.getDescription(), regions);
         Role saved = roleRepository.save(role);
         return toResponse(saved);
     }
@@ -58,11 +63,13 @@ public class RoleService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Descrição já existe.");
         }
 
-        Region region = regionRepository.findById(dto.getRegionId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Região inválida."));
+        List<Region> regions = regionRepository.findAllById(dto.getRegionIds());
+        if (regions.size() != dto.getRegionIds().size()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Uma ou mais regiões são inválidas.");
+        }
 
         role.setDescription(dto.getDescription());
-        role.setRegion(region);
+        role.setRegions(regions);
 
         Role saved = roleRepository.save(role);
         return toResponse(saved);
@@ -75,11 +82,16 @@ public class RoleService {
     }
 
     private RoleResponseDTO toResponse(Role r) {
+        List<RegionResponseDTO> regionDTOs = r.getRegions() != null ?
+            r.getRegions().stream()
+                .map(region -> new RegionResponseDTO(region.getIdRegion(), region.getName()))
+                .collect(Collectors.toList()) :
+            List.of();
+
         return new RoleResponseDTO(
                 r.getId(),
                 r.getDescription(),
-                r.getRegion() != null ? r.getRegion().getIdRegion() : null,
-                r.getRegion() != null ? r.getRegion().getName() : null
+                regionDTOs
         );
     }
 }
