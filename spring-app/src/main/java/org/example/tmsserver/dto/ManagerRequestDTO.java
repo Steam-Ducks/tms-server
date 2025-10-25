@@ -1,27 +1,13 @@
 package org.example.tmsserver.dto;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-
 public class ManagerRequestDTO {
 
-    @NotBlank(message = "O email é obrigatório")
-    @Email(message = "O email deve ser válido")
     private String email;
-
-    @NotBlank(message = "O número de telefone é obrigatório")
-    @Size(min = 11, max = 11, message = "O número de telefone deve ter 11 dígitos")
     private String phoneNumber;
-
-    @NotBlank(message = "O nome de usuário é obrigatório")
-    private String username; // <-- ESTE CAMPO
-
-    @NotBlank(message = "A senha é obrigatória")
-    @Size(min = 6, message = "A senha deve ter no mínimo 6 caracteres")
+    private String username;
     private String password;
+    private Integer roleId;
 
-    // Getters and Setters
     public String getEmail() {
         return email;
     }
@@ -38,7 +24,6 @@ public class ManagerRequestDTO {
         this.phoneNumber = phoneNumber;
     }
 
-    // <-- E ESTES MÉTODOS
     public String getUsername() {
         return username;
     }
@@ -53,5 +38,13 @@ public class ManagerRequestDTO {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Integer getRoleId() {
+        return roleId;
+    }
+
+    public void setRoleId(Integer roleId) {
+        this.roleId = roleId;
     }
 }

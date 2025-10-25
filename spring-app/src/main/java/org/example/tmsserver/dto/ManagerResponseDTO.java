@@ -3,25 +3,34 @@ package org.example.tmsserver.dto;
 public class ManagerResponseDTO {
 
     private Integer id;
+    private String username;
     private String email;
     private String phoneNumber;
     private String roleDescription;
 
-    // Construtor
-    public ManagerResponseDTO(Integer id, String email, String phoneNumber, String roleDescription) {
+    public ManagerResponseDTO(Integer id, String username, String email, String phoneNumber, String roleDescription) {
         this.id = id;
+        this.username = username;
         this.email = email;
         this.phoneNumber = phoneNumber;
         this.roleDescription = roleDescription;
     }
 
-    // Getters and Setters
+    // Getters e Setters
     public Integer getId() {
         return id;
     }
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getEmail() {

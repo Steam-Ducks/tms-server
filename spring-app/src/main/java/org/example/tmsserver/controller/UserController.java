@@ -29,22 +29,6 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping("/me")
-    public Map<String, Object> me(Authentication auth) {
-        return Map.of(
-                "username", auth.getName(),
-                "roles", auth.getAuthorities().stream()
-                        .map(GrantedAuthority::getAuthority)
-                        .collect(Collectors.toList())
-        );
-    }
-
-    @PostMapping
-    public ResponseEntity<ManagerResponseDTO> createUser(@Valid @RequestBody ManagerRequestDTO requestDTO) {
-        ManagerResponseDTO responseDTO = userService.createUser(requestDTO);
-        return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
-    }
-
     @GetMapping
     public ResponseEntity<List<ManagerResponseDTO>> getAllUsers() {
         List<ManagerResponseDTO> users = userService.getAllUsers();
