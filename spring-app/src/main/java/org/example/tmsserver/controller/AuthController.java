@@ -42,7 +42,6 @@ public class AuthController {
         String normalizedPhone = null;
         if (req.phoneNumber() != null && !req.phoneNumber().isBlank()) {
             normalizedPhone = req.phoneNumber().replaceAll("\\D", "");
-            // sua coluna é CHAR(11) → garanta 11 dígitos (Brasil sem DDI)
             if (normalizedPhone.length() != 11) {
                 return ResponseEntity.badRequest().body("phone_number inválido (esperado 11 dígitos)");
             }
@@ -51,7 +50,6 @@ public class AuthController {
             }
         }
 
-        // Since all users are managers now, assign ROLE_ADMIN by default
         Role role = (req.roleId() != null)
                 ? roleRepo.findById(req.roleId()).orElse(null)
                 : roleRepo.findByDescription("ROLE_ADMIN").orElse(null);
@@ -65,7 +63,6 @@ public class AuthController {
         u.setEnabled(true);
         u.setRole(role);
 
-        // seta telefone somente se informado
         if (normalizedPhone != null) {
             u.setPhoneNumber(normalizedPhone);
         }
