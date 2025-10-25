@@ -68,7 +68,7 @@ public class SpeedRecordService {
             int randomMinute = random.nextInt(60); // 0-59
             int randomSecond = random.nextInt(60); // 0-59
 
-            String initialStr = String.format("2025-08-16 %02d:%02d:%02d", randomHour, randomMinute, randomSecond);
+            String initialStr = String.format("2025-08-14 %02d:%02d:%02d", randomHour, randomMinute, randomSecond);
             System.out.println("Usando horário aleatório para teste: " + initialStr);
 
             String url = "https://mock-api-75a7.onrender.com/radares?initial_date=" + initialStr + "&last_minutes=2";

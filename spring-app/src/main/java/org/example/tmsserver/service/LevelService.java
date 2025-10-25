@@ -35,6 +35,7 @@ public class LevelService {
     private final RegionRepository regionRepository;
     private final IndicatorRepository indicatorRepository;
     private final CameraRepository cameraRepository;
+    private final AlertMonitorService alertMonitorService;
 
     private static final Map<String, Double> INDICATOR_WEIGHTS = Map.of(
             "Average Speed", 0.5,
@@ -45,12 +46,13 @@ public class LevelService {
     public LevelService(RegionIndicatorRepository regionIndicatorRepository,
                         LevelRepository levelRepository,
                         RegionRepository regionRepository, IndicatorRepository indicatorRepository,
-                        CameraRepository cameraRepository) {
+                        CameraRepository cameraRepository, AlertMonitorService alertMonitorService) {
         this.regionIndicatorRepository = regionIndicatorRepository;
         this.levelRepository = levelRepository;
         this.regionRepository = regionRepository;
         this.indicatorRepository = indicatorRepository;
         this.cameraRepository = cameraRepository;
+        this.alertMonitorService = alertMonitorService;
     }
 
     public List<ZoneLevelDTO> getLatestRegionLevels() {
@@ -162,18 +164,14 @@ public class LevelService {
         }
 
         int levelValue = accumulateLevel(indicatorLevels);
-
-        System.out.println("DEBUG: Nível mapeado -> " + levelValue);
         logger.info("Nível determinado: {}", levelValue);
-
 
         Region region = regionRepository.findById(regionId)
                 .orElseThrow(() -> {
-                    System.out.println("DEBUG: Região não encontrada para o ID -> " + regionId);
                     logger.error("Região não encontrada para ID {}", regionId);
                     return new IllegalArgumentException("Região não encontrada");
                 });
-        System.out.println("DEBUG: Região encontrada: " + region.getName());
+
         logger.info("Região encontrada: {}", region.getName());
 
         Level level = new Level();
@@ -182,10 +180,11 @@ public class LevelService {
         level.setRegion(region);
 
         Level savedLevel = levelRepository.save(level);
-        System.out.println("DEBUG: Level salvo -> " + savedLevel);
         logger.info("Level salvo com sucesso: {}", savedLevel);
 
-        logger.info("=== Fim do cálculo de nível para região ID: {} ===", regionId);
+        checkAndTriggerAlerts(region, levelValue);
+
+        logger.info("Fim do cálculo de nível para região ID: {}", regionId);
         return savedLevel;
     }
 
@@ -223,5 +222,31 @@ public class LevelService {
 
     private int countIndicators() {
         return (int) indicatorRepository.count();
+    }
+
+    private void checkAndTriggerAlerts(Region region, int levelValue) {
+        if (levelValue == 4 || levelValue == 5) {
+            String severity = getSeverityDescription(levelValue);
+            String description = getLevelDescription(levelValue);
+
+            logger.warn("Nível crítico detectado! Região: {}, Nível: {}", region.getName(), levelValue);
+            alertMonitorService.sendCriticalAlert(region, levelValue, severity, description);
+        }
+    }
+
+    private String getSeverityDescription(int level) {
+        return switch (level) {
+            case 4 -> "ALTO";
+            case 5 -> "MUITO ALTO";
+            default -> "ALTO";
+        };
+    }
+
+    private String getLevelDescription(int level) {
+        return switch (level) {
+            case 4 -> "Tráfego intenso";
+            case 5 -> "Congestionamento crítico";
+            default -> "Tráfego intenso";
+        };
     }
 }
