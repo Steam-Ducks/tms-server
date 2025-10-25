@@ -1,4 +1,5 @@
 package org.example.tmsserver.service;
+import org.example.tmsserver.dto.RegionIndicatorDTO;
 import org.example.tmsserver.entity.Indicator;
 import org.example.tmsserver.entity.Region;
 import org.example.tmsserver.entity.RegionIndicator;
@@ -269,5 +270,15 @@ public class RegionIndicatorService {
                 e.printStackTrace();
             }
         }
+    }
+
+    // GETTERS
+
+    public List<RegionIndicatorDTO> getIndicatorPerDay() {
+        return regionIndicatorRepository.mapToDTOPerDay();
+    }
+
+    public List<RegionIndicatorDTO> getIndicatorPerHour() {
+        return regionIndicatorRepository.mapToDTOPerHour();
     }
 }
