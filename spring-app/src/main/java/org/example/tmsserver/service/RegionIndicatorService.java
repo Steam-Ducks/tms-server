@@ -1,4 +1,5 @@
 package org.example.tmsserver.service;
+import org.example.tmsserver.dto.RegionIndicatorDTO;
 import org.example.tmsserver.entity.Indicator;
 import org.example.tmsserver.entity.Region;
 import org.example.tmsserver.entity.RegionIndicator;
@@ -16,6 +17,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.HashSet;
 
 @Service
 public class RegionIndicatorService {
@@ -41,10 +44,14 @@ public class RegionIndicatorService {
 
         calculateAverageSpeedIndicator();
 
-        //future indicators here
+        calculateComplianceRateIndicator();
+
+        calculateTrafficDensityIndicator();
 
         System.out.println("Processamento de todos os indicadores finalizado!");
     }
+
+    // AVERAGE SPEED METHOD
 
     private void calculateAverageSpeedIndicator() {
         System.out.println("Calculando indicador: Average Speed");
@@ -104,6 +111,121 @@ public class RegionIndicatorService {
         return regionMap;
     }
 
+    // COMPLIANCE RATE METHOD
+
+    private void calculateComplianceRateIndicator() {
+        System.out.println("Calculando indicador: Compliance Rate");
+
+        Optional<Indicator> indicatorOpt = indicatorRepository.findByName("Compliance Rate");
+
+        if (indicatorOpt.isEmpty()) {
+            System.err.println("Indicator 'Compliance Rate' not found.");
+            return;
+        }
+
+        Indicator indicatorEntity = indicatorOpt.get();
+
+        List<Object[]> data = speedRecordRepository.findRegionCameraAggregates();
+        System.out.println("Dados retornados: " + data.size() + " registros");
+
+        Map<Integer, BigDecimal[]> regionMap = calculateComplianceRateByRegion(data);
+
+        saveRegionIndicators(regionMap, indicatorEntity);
+
+        System.out.println("Indicador Compliance Rate processado!");
+    }
+
+    private Map<Integer, BigDecimal[]> calculateComplianceRateByRegion(List<Object[]> data) {
+
+        Map<Integer, BigDecimal[]> tempMap = new HashMap<>();
+
+        for (Object[] row : data) {
+            try {
+                Integer regionId = ((Number) row[0]).intValue();
+                BigDecimal countAbove = new BigDecimal(((Number) row[5]).longValue());
+                BigDecimal totalCount = new BigDecimal(((Number) row[3]).longValue());
+
+                tempMap.putIfAbsent(regionId, new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
+                BigDecimal[] vals = tempMap.get(regionId);
+
+                vals[0] = vals[0].add(countAbove);
+                vals[1] = vals[1].add(totalCount);
+
+            } catch (Exception e) {
+                System.err.println("Erro processando linha: " + e.getMessage());
+            }
+        }
+
+        Map<Integer, BigDecimal[]> complianceMap = new HashMap<>();
+        for (Map.Entry<Integer, BigDecimal[]> entry : tempMap.entrySet()) {
+            BigDecimal countAboveSum = entry.getValue()[0];
+            BigDecimal totalCountSum = entry.getValue()[1];
+
+            BigDecimal rate = countAboveSum.divide(totalCountSum, 6, RoundingMode.HALF_UP)
+                    .setScale(2, RoundingMode.HALF_UP);
+
+            complianceMap.put(entry.getKey(), new BigDecimal[]{rate, BigDecimal.valueOf(1)});
+        }
+
+        return complianceMap;
+    }
+
+    // TRAFFIC DENSITY METHOD
+
+    private void calculateTrafficDensityIndicator() {
+        System.out.println("Calculando indicador: Traffic Density");
+
+        Optional<Indicator> indicatorOpt = indicatorRepository.findByName("Traffic Density");
+
+        if (indicatorOpt.isEmpty()) {
+            System.err.println("Indicator 'Traffic Density' not found.");
+            return;
+        }
+
+        Indicator indicatorEntity = indicatorOpt.get();
+
+        List<Object[]> data = speedRecordRepository.findRegionCameraAggregates();
+        System.out.println("Dados retornados: " + data.size() + " registros");
+
+        Map<Integer, BigDecimal[]> regionMap = calculateTrafficDensityByRegion(data);
+
+        saveRegionIndicators(regionMap, indicatorEntity);
+
+        System.out.println("Indicador Traffic Density processado!");
+    }
+
+    private Map<Integer, BigDecimal[]> calculateTrafficDensityByRegion(List<Object[]> data) {
+
+        Map<Integer, BigDecimal> totalRecordsMap = new HashMap<>();
+        Map<Integer, Set<String>> camerasMap = new HashMap<>();
+
+        for (Object[] row : data) {
+            Integer regionId = ((Number) row[0]).intValue();
+            String cameraId = row[1].toString();
+            BigDecimal count = new BigDecimal(((Number) row[3]).longValue());
+
+            totalRecordsMap.put(regionId, totalRecordsMap.getOrDefault(regionId, BigDecimal.ZERO).add(count));
+
+            camerasMap.putIfAbsent(regionId, new HashSet<>());
+            camerasMap.get(regionId).add(cameraId);
+        }
+
+        Map<Integer, BigDecimal[]> trafficDensityMap = new HashMap<>();
+        for (Integer regionId : totalRecordsMap.keySet()) {
+            BigDecimal totalRecords = totalRecordsMap.get(regionId);
+            BigDecimal numCameras = BigDecimal.valueOf(camerasMap.get(regionId).size());
+            BigDecimal density = totalRecords
+                    .divide(numCameras, 6, RoundingMode.HALF_UP)
+                    .divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP);
+
+            trafficDensityMap.put(regionId, new BigDecimal[]{density, BigDecimal.valueOf(1)});
+        }
+
+        return trafficDensityMap;
+    }
+
+    // SAVING INDICATORS IN DATABASE METHOD
+
     private void saveRegionIndicators(Map<Integer, BigDecimal[]> regionMap, Indicator indicator) {
         OffsetDateTime now = OffsetDateTime.now();
         System.out.println("Cálculo por região finalizado. Criando RegionIndicators...");
@@ -148,5 +270,15 @@ public class RegionIndicatorService {
                 e.printStackTrace();
             }
         }
+    }
+
+    // GETTERS
+
+    public List<RegionIndicatorDTO> getIndicatorPerDay() {
+        return regionIndicatorRepository.mapToDTOPerDay();
+    }
+
+    public List<RegionIndicatorDTO> getIndicatorPerHour() {
+        return regionIndicatorRepository.mapToDTOPerHour();
     }
 }
