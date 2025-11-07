@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.example.tmsserver.dto.RegionIndicatorDTO;
+import org.example.tmsserver.entity.Indicator;
 import org.example.tmsserver.entity.RegionIndicator;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -89,4 +90,6 @@ public interface RegionIndicatorRepository extends JpaRepository<RegionIndicator
 
         return dtos;
     }
+
+    List<RegionIndicator> findByRegionIdRegionAndIndicatorOrderByTimeDesc(Integer regionId, Indicator indicator);
 }
