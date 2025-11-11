@@ -380,4 +380,17 @@ public class RegionIndicatorService {
     public List<RegionIndicatorDTO> getIndicatorPerHour() {
         return regionIndicatorRepository.mapToDTOPerHour();
     }
+
+    public Map<String, String> getIndicatorStatus() {
+        List<Object[]> results = regionIndicatorRepository.findLatestIndicatorChanges();
+        Map<String, String> statusMap = new HashMap<>();
+
+        for (Object[] row : results) {
+            String indicatorName = (String) row[0];
+            String change = (String) row[1];
+            statusMap.put(indicatorName, change);
+        }
+
+        return statusMap;
+    }
 }
