@@ -2,6 +2,7 @@ package org.example.tmsserver.repository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.example.tmsserver.dto.RegionIndicatorDTO;
 import org.example.tmsserver.entity.RegionIndicator;
@@ -89,4 +90,6 @@ public interface RegionIndicatorRepository extends JpaRepository<RegionIndicator
 
         return dtos;
     }
+
+    Optional<RegionIndicator> findTopByRegion_IdRegionAndIndicator_IdIndicatorOrderByTimeDesc(Integer regionId, Integer indicatorId);
 }

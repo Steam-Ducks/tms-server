@@ -23,6 +23,7 @@ import java.util.HashSet;
 @Service
 public class RegionIndicatorService {
 
+    private static final int TREND_TOLERANCE = 1;
     private final SpeedRecordRepository speedRecordRepository;
     private final RegionIndicatorRepository regionIndicatorRepository;
     private final RegionRepository regionRepository;
@@ -36,6 +37,16 @@ public class RegionIndicatorService {
         this.regionIndicatorRepository = regionIndicatorRepository;
         this.regionRepository = regionRepository;
         this.indicatorRepository = indicatorRepository;
+    }
+
+    private String decideChange(Integer newVal, Integer prevVal, boolean higherIsBetter) {
+        if (prevVal == null) return "MANTEVE";
+
+        int diff = newVal - prevVal;
+        if (Math.abs(diff) <= TREND_TOLERANCE) return "MANTEVE";
+
+        boolean improved = higherIsBetter ? (diff > 0) : (diff < 0);
+        return improved ? "MELHOROU" : "PIOROU";
     }
 
     @Transactional
@@ -229,6 +240,7 @@ public class RegionIndicatorService {
     private void saveRegionIndicators(Map<Integer, BigDecimal[]> regionMap, Indicator indicator) {
         OffsetDateTime now = OffsetDateTime.now();
         System.out.println("Cálculo por região finalizado. Criando RegionIndicators...");
+        boolean higherIsBetter = true;
 
         for (Map.Entry<Integer, BigDecimal[]> entry : regionMap.entrySet()) {
             Integer regionId = entry.getKey();
@@ -247,12 +259,18 @@ public class RegionIndicatorService {
                     regionalAvg = vals[0].divide(vals[1], 6, RoundingMode.HALF_UP);
                 }
 
+                int valueInt = regionalAvg.multiply(BigDecimal.valueOf(100)).intValue();
+                Optional<RegionIndicator> lastOpt = regionIndicatorRepository.findTopByRegion_IdRegionAndIndicator_IdIndicatorOrderByTimeDesc(regionId, indicator.getIdIndicator());
+                Integer prevVal = lastOpt.map(RegionIndicator::getValue).orElse(null);
+                String trend = decideChange(valueInt, prevVal, higherIsBetter);
+
                 RegionIndicator regionIndicator = new RegionIndicator();
                 regionIndicator.setRegion(regionEntity);
                 regionIndicator.setIndicator(indicator);
                 regionIndicator.setValue(regionalAvg.multiply(BigDecimal.valueOf(100)).intValue());
                 regionIndicator.setTime(now);
                 regionIndicator.setChange("CALC");
+                regionIndicator.setChange(trend);
 
                 System.out.println("Preparando salvar: regionId=" + regionId + ", value=" + regionIndicator.getValue());
 
