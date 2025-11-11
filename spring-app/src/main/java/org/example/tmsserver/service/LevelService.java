@@ -5,16 +5,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.example.tmsserver.dto.ZoneLevelDTO;
 import org.example.tmsserver.entity.Level;
 import org.example.tmsserver.entity.Region;
 import org.example.tmsserver.entity.RegionIndicator;
-import org.example.tmsserver.indicators.AverageSpeedCalculator;
-import org.example.tmsserver.indicators.ComplianceRateCalculator;
-import org.example.tmsserver.indicators.IndicatorCalculator;
-import org.example.tmsserver.indicators.TrafficDensityCalculator;
+import org.example.tmsserver.indicators.*;
 import org.example.tmsserver.repository.CameraRepository;
 import org.example.tmsserver.repository.IndicatorRepository;
 import org.example.tmsserver.repository.LevelRepository;
@@ -38,9 +36,10 @@ public class LevelService {
     private final AlertMonitorService alertMonitorService;
 
     private static final Map<String, Double> INDICATOR_WEIGHTS = Map.of(
-            "Average Speed", 0.5,
-            "Compliance Rate", 0.3,
-            "Traffic Density", 0.2
+            "Average Speed", 0.4,
+            "Compliance Rate", 0.25,
+            "Traffic Density", 0.2,
+            "Weather", 0.15
     );
 
     public LevelService(RegionIndicatorRepository regionIndicatorRepository,
@@ -64,6 +63,8 @@ public class LevelService {
             String regionName = regionRepository.findById(regionId)
                     .map(Region::getName)
                     .orElse("Região Desconhecida");
+
+            Integer latestWeatherCode = getLatestWeatherCodeForRegion(regionId);
 
             // Get camera data for this region
             List<Object[]> cameraData = cameraRepository.findCamerasWithStatsForRegion(regionId);
@@ -110,9 +111,37 @@ public class LevelService {
                     String.valueOf(regionId),
                     regionName,
                     level.getValue(),
-                    cameras
+                    cameras,
+                    latestWeatherCode
             );
         }).collect(Collectors.toList());
+    }
+
+    private Integer getLatestWeatherCodeForRegion(Integer regionId) {
+        try {
+            Optional<org.example.tmsserver.entity.Indicator> weatherIndicatorOpt =
+                indicatorRepository.findByName("Weather");
+
+            if (weatherIndicatorOpt.isEmpty()) {
+                logger.warn("Weather indicator not found in database");
+                return null;
+            }
+
+            List<RegionIndicator> weatherIndicators = regionIndicatorRepository
+                .findByRegionIdRegionAndIndicatorOrderByTimeDesc(regionId, weatherIndicatorOpt.get());
+
+            if (!weatherIndicators.isEmpty()) {
+                Integer weatherCode = weatherIndicators.get(0).getValue();
+                logger.debug("Latest weather code for region {}: {}", regionId, weatherCode);
+                return weatherCode;
+            } else {
+                logger.warn("No weather data found for region {}", regionId);
+                return null;
+            }
+        } catch (Exception e) {
+            logger.error("Error getting weather code for region {}: {}", regionId, e.getMessage());
+            return null;
+        }
     }
 
     @Transactional
@@ -143,7 +172,8 @@ public class LevelService {
         List<IndicatorCalculator> calculators = List.of(
                 new AverageSpeedCalculator(),
                 new ComplianceRateCalculator(),
-                new TrafficDensityCalculator()
+                new TrafficDensityCalculator(),
+                new WeatherCalculator()
         );
 
         List<RegionIndicator> regionIndicators = regionIndicatorRepository.findValuesByRegion(regionId, countIndicators());
