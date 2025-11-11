@@ -1,5 +1,6 @@
 package org.example.tmsserver.service;
 import org.example.tmsserver.dto.RegionIndicatorDTO;
+import org.example.tmsserver.dto.WeatherResponse;
 import org.example.tmsserver.entity.Indicator;
 import org.example.tmsserver.entity.Region;
 import org.example.tmsserver.entity.RegionIndicator;
@@ -7,6 +8,7 @@ import org.example.tmsserver.repository.IndicatorRepository;
 import org.example.tmsserver.repository.RegionIndicatorRepository;
 import org.example.tmsserver.repository.RegionRepository;
 import org.example.tmsserver.repository.SpeedRecordRepository;
+import org.example.tmsserver.config.RegionWeatherConfig;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,15 +29,21 @@ public class RegionIndicatorService {
     private final RegionIndicatorRepository regionIndicatorRepository;
     private final RegionRepository regionRepository;
     private final IndicatorRepository indicatorRepository;
+    private final WeatherApiClient weatherApiClient;
+    private final WeatherCodeMapper weatherCodeMapper;
 
     public RegionIndicatorService(SpeedRecordRepository speedRecordRepository,
                                   RegionIndicatorRepository regionIndicatorRepository,
                                   RegionRepository regionRepository,
-                                  IndicatorRepository indicatorRepository) {
+                                  IndicatorRepository indicatorRepository,
+                                  WeatherApiClient weatherApiClient,
+                                  WeatherCodeMapper weatherCodeMapper) {
         this.speedRecordRepository = speedRecordRepository;
         this.regionIndicatorRepository = regionIndicatorRepository;
         this.regionRepository = regionRepository;
         this.indicatorRepository = indicatorRepository;
+        this.weatherApiClient = weatherApiClient;
+        this.weatherCodeMapper = weatherCodeMapper;
     }
 
     @Transactional
@@ -47,6 +55,8 @@ public class RegionIndicatorService {
         calculateComplianceRateIndicator();
 
         calculateTrafficDensityIndicator();
+
+        calculateWeatherIndicator();
 
         System.out.println("Processamento de todos os indicadores finalizado!");
     }
@@ -72,6 +82,7 @@ public class RegionIndicatorService {
 
         System.out.println("Indicador Average Speed processado!");
     }
+
 
     private Map<Integer, BigDecimal[]> calculateAverageSpeedByRegion(List<Object[]> data) {
         Map<Integer, BigDecimal[]> regionMap = new HashMap<>();
@@ -224,6 +235,70 @@ public class RegionIndicatorService {
         return trafficDensityMap;
     }
 
+    // WEATHER INDICATOR METHOD
+
+    private void calculateWeatherIndicator() {
+        System.out.println("Calculando indicador: Weather");
+
+        Optional<Indicator> indicatorOpt = indicatorRepository.findByName("Weather");
+        if (indicatorOpt.isEmpty()) {
+            System.err.println("Indicator 'Weather' not found.");
+            return;
+        }
+        Indicator indicatorEntity = indicatorOpt.get();
+
+        Map<Integer, BigDecimal[]> regionMap = calculateWeatherByRegion();
+
+        saveRegionIndicators(regionMap, indicatorEntity);
+
+        System.out.println("Indicador Weather processado!");
+    }
+
+    private Map<Integer, BigDecimal[]> calculateWeatherByRegion() {
+        Map<Integer, BigDecimal[]> weatherMap = new HashMap<>();
+
+        List<Region> regions = regionRepository.findAll();
+
+        for (Region region : regions) {
+            try {
+                Integer regionId = region.getIdRegion();
+
+                if (!RegionWeatherConfig.hasCoordinates(regionId)) {
+                    System.err.println("No coordinates configured for regionId=" + regionId + ". Skipping.");
+                    continue;
+                }
+
+                double[] coordinates = RegionWeatherConfig.getCoordinates(regionId);
+                double latitude = coordinates[0];
+                double longitude = coordinates[1];
+
+                System.out.println("Buscando dados de clima para regionId=" + regionId +
+                                 " (lat=" + latitude + ", lon=" + longitude + ")");
+
+                WeatherResponse weatherResponse = weatherApiClient.getWeather(latitude, longitude);
+
+                if (weatherResponse == null || weatherResponse.getCurrent() == null) {
+                    System.err.println("Failed to get weather data for regionId=" + regionId);
+                    continue;
+                }
+
+                int weatherCode = weatherResponse.getCurrent().getWeathercode();
+
+                System.out.println("RegionId=" + regionId + " - WeatherCode=" + weatherCode);
+
+                BigDecimal weatherCodeValue = BigDecimal.valueOf(weatherCode);
+
+                weatherMap.put(regionId, new BigDecimal[]{weatherCodeValue, BigDecimal.valueOf(1)});
+
+            } catch (Exception e) {
+                System.err.println("Erro processando clima para regionId=" + region.getIdRegion() + ": " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        return weatherMap;
+    }
+
     // SAVING INDICATORS IN DATABASE METHOD
 
     private void saveRegionIndicators(Map<Integer, BigDecimal[]> regionMap, Indicator indicator) {
@@ -250,7 +325,13 @@ public class RegionIndicatorService {
                 RegionIndicator regionIndicator = new RegionIndicator();
                 regionIndicator.setRegion(regionEntity);
                 regionIndicator.setIndicator(indicator);
-                regionIndicator.setValue(regionalAvg.multiply(BigDecimal.valueOf(100)).intValue());
+
+                if ("Weather".equals(indicator.getName())) {
+                    regionIndicator.setValue(regionalAvg.intValue());
+                } else {
+                    regionIndicator.setValue(regionalAvg.multiply(BigDecimal.valueOf(100)).intValue());
+                }
+
                 regionIndicator.setTime(now);
                 regionIndicator.setChange("CALC");
 

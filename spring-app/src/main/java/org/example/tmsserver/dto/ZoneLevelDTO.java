@@ -9,6 +9,7 @@ public class ZoneLevelDTO {
     private String name;
     private int level;
     private List<Map<String, Object>> cameras;
+    private Integer weatherCode;
 
     // Construtor padrão (obrigatório para o Spring)
     public ZoneLevelDTO() {
@@ -27,6 +28,15 @@ public class ZoneLevelDTO {
         this.name = capitalizeWords(name);
         this.level = level;
         this.cameras = cameras;
+    }
+
+    // Construtor com cameras e weather code
+    public ZoneLevelDTO(String id, String name, int level, List<Map<String, Object>> cameras, Integer weatherCode) {
+        this.id = id;
+        this.name = capitalizeWords(name);
+        this.level = level;
+        this.cameras = cameras;
+        this.weatherCode = weatherCode;
     }
 
     private String capitalizeWords(String input) {
@@ -89,5 +99,13 @@ public class ZoneLevelDTO {
 
     public void setCameras(List<Map<String, Object>> cameras) {
         this.cameras = cameras;
+    }
+
+    public Integer getWeatherCode() {
+        return weatherCode;
+    }
+
+    public void setWeatherCode(Integer weatherCode) {
+        this.weatherCode = weatherCode;
     }
 }
