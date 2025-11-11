@@ -2,6 +2,7 @@ package org.example.tmsserver.repository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.example.tmsserver.dto.RegionIndicatorDTO;
 import org.example.tmsserver.entity.Indicator;
@@ -91,5 +92,21 @@ public interface RegionIndicatorRepository extends JpaRepository<RegionIndicator
         return dtos;
     }
 
+    Optional<RegionIndicator> findTopByRegion_IdRegionAndIndicator_IdIndicatorOrderByTimeDesc(Integer regionId, Integer indicatorId);
+  
     List<RegionIndicator> findByRegionIdRegionAndIndicatorOrderByTimeDesc(Integer regionId, Indicator indicator);
+
+    @Query(value = """
+        SELECT i.name, ri.change
+        FROM region_indicator ri
+        JOIN indicator i ON i.id_indicator = ri.id_indicator
+        WHERE ri.id = (
+            SELECT MAX(ri2.id)
+            FROM region_indicator ri2
+            WHERE ri2.id_indicator = ri.id_indicator
+        )
+        AND i.name != 'Weather'
+        ORDER BY i.name
+    """, nativeQuery = true)
+    List<Object[]> findLatestIndicatorChanges();
 }

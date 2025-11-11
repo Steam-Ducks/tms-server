@@ -25,6 +25,7 @@ import java.util.HashSet;
 @Service
 public class RegionIndicatorService {
 
+    private static final int TREND_TOLERANCE = 1;
     private final SpeedRecordRepository speedRecordRepository;
     private final RegionIndicatorRepository regionIndicatorRepository;
     private final RegionRepository regionRepository;
@@ -44,6 +45,16 @@ public class RegionIndicatorService {
         this.indicatorRepository = indicatorRepository;
         this.weatherApiClient = weatherApiClient;
         this.weatherCodeMapper = weatherCodeMapper;
+    }
+
+    private String decideChange(Integer newVal, Integer prevVal, boolean higherIsBetter) {
+        if (prevVal == null) return "MANTEVE";
+
+        int diff = newVal - prevVal;
+        if (Math.abs(diff) <= TREND_TOLERANCE) return "MANTEVE";
+
+        boolean improved = higherIsBetter ? (diff > 0) : (diff < 0);
+        return improved ? "MELHOROU" : "PIOROU";
     }
 
     @Transactional
@@ -304,6 +315,7 @@ public class RegionIndicatorService {
     private void saveRegionIndicators(Map<Integer, BigDecimal[]> regionMap, Indicator indicator) {
         OffsetDateTime now = OffsetDateTime.now();
         System.out.println("Cálculo por região finalizado. Criando RegionIndicators...");
+        boolean higherIsBetter = true;
 
         for (Map.Entry<Integer, BigDecimal[]> entry : regionMap.entrySet()) {
             Integer regionId = entry.getKey();
@@ -322,6 +334,11 @@ public class RegionIndicatorService {
                     regionalAvg = vals[0].divide(vals[1], 6, RoundingMode.HALF_UP);
                 }
 
+                int valueInt = regionalAvg.multiply(BigDecimal.valueOf(100)).intValue();
+                Optional<RegionIndicator> lastOpt = regionIndicatorRepository.findTopByRegion_IdRegionAndIndicator_IdIndicatorOrderByTimeDesc(regionId, indicator.getIdIndicator());
+                Integer prevVal = lastOpt.map(RegionIndicator::getValue).orElse(null);
+                String trend = decideChange(valueInt, prevVal, higherIsBetter);
+
                 RegionIndicator regionIndicator = new RegionIndicator();
                 regionIndicator.setRegion(regionEntity);
                 regionIndicator.setIndicator(indicator);
@@ -334,6 +351,7 @@ public class RegionIndicatorService {
 
                 regionIndicator.setTime(now);
                 regionIndicator.setChange("CALC");
+                regionIndicator.setChange(trend);
 
                 System.out.println("Preparando salvar: regionId=" + regionId + ", value=" + regionIndicator.getValue());
 
@@ -361,5 +379,18 @@ public class RegionIndicatorService {
 
     public List<RegionIndicatorDTO> getIndicatorPerHour() {
         return regionIndicatorRepository.mapToDTOPerHour();
+    }
+
+    public Map<String, String> getIndicatorStatus() {
+        List<Object[]> results = regionIndicatorRepository.findLatestIndicatorChanges();
+        Map<String, String> statusMap = new HashMap<>();
+
+        for (Object[] row : results) {
+            String indicatorName = (String) row[0];
+            String change = (String) row[1];
+            statusMap.put(indicatorName, change);
+        }
+
+        return statusMap;
     }
 }

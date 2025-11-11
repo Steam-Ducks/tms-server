@@ -34,4 +34,10 @@ public class RegionIndicatorController {
         return ResponseEntity.ok(Map.of("hourly", data));
     }
 
+    @GetMapping("/status")
+    public ResponseEntity<Map<String, String>> getIndicatorStatus() {
+        Map<String, String> data = regionIndicatorService.getIndicatorStatus();
+        return ResponseEntity.ok(data);
+    }
+
 }
