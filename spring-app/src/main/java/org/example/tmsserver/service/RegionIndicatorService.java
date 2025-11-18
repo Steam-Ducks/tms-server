@@ -15,12 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.OffsetDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class RegionIndicatorService {
@@ -392,5 +388,130 @@ public class RegionIndicatorService {
         }
 
         return statusMap;
+    }
+
+    public Map<String, Object> getIndicatorsByRegion(String regionName) {
+        List<RegionIndicatorDTO> indicators = regionIndicatorRepository.findLatestIndicatorsByRegion(regionName);
+
+        // Enriquecer os dados com level e change
+        List<Map<String, Object>> enrichedIndicators = indicators.stream()
+                .map(dto -> {
+                    Map<String, Object> enriched = new HashMap<>();
+                    enriched.put("indicatorName", dto.getIndicatorName());
+                    enriched.put("value", dto.getAverageValue() != null ?
+                            dto.getAverageValue().intValue() : null);
+                    enriched.put("level", calculateLevel(dto.getIndicatorName(),
+                            dto.getAverageValue() != null ? dto.getAverageValue().intValue() : null));
+                    enriched.put("change", regionIndicatorRepository.findLatestChangeByRegionAndIndicator(
+                            regionName, dto.getIndicatorName()));
+                    return enriched;
+                })
+                .collect(Collectors.toList());
+
+        String overallLevel = calculateOverallLevel(enrichedIndicators);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("region", regionName);
+        result.put("overallLevel", overallLevel);
+        result.put("indicators", enrichedIndicators);
+
+        return result;
+    }
+
+    public Map<String, Object> getAllRegionsWithIndicators() {
+        List<String> regionNames = regionIndicatorRepository.findAllRegionNames();
+        Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> regionsData = new ArrayList<>();
+
+        for (String regionName : regionNames) {
+            Map<String, Object> regionData = getIndicatorsByRegion(regionName);
+            regionsData.add(regionData);
+        }
+
+        result.put("regions", regionsData);
+        return result;
+    }
+
+    public List<Map<String, String>> getRegionsSummary() {
+        List<String> regionNames = regionIndicatorRepository.findAllRegionNames();
+        List<Map<String, String>> summary = new ArrayList<>();
+
+        for (String regionName : regionNames) {
+            Map<String, Object> regionData = getIndicatorsByRegion(regionName);
+
+            Map<String, String> regionSummary = new HashMap<>();
+            regionSummary.put("region", regionName);
+            regionSummary.put("level", (String) regionData.get("overallLevel"));
+
+            summary.add(regionSummary);
+        }
+
+        return summary;
+    }
+
+    private String calculateLevel(String indicatorName, Integer value) {
+        if (value == null) return "E";
+
+        switch (indicatorName) {
+            case "Average Speed":
+                if (value >= 90) return "A";
+                if (value >= 80) return "B";
+                if (value >= 70) return "C";
+                if (value >= 60) return "D";
+                return "E";
+
+            case "Compliance Rate":
+                if (value >= 95) return "A";
+                if (value >= 85) return "B";
+                if (value >= 75) return "C";
+                if (value >= 65) return "D";
+                return "E";
+
+            case "Traffic Density":
+                if (value <= 20) return "A";
+                if (value <= 40) return "B";
+                if (value <= 60) return "C";
+                if (value <= 80) return "D";
+                return "E";
+
+            case "Weather":
+                if (value <= 3) return "A";
+                if (value <= 20) return "B";
+                if (value <= 60) return "C";
+                if (value <= 80) return "D";
+                return "E";
+
+            default:
+                return "E";
+        }
+    }
+
+    private String calculateOverallLevel(List<Map<String, Object>> indicators) {
+        if (indicators == null || indicators.isEmpty()) return "E";
+
+        Map<String, Integer> levelValues = Map.of(
+                "A", 5, "B", 4, "C", 3, "D", 2, "E", 1
+        );
+
+        double sum = 0;
+        int count = 0;
+
+        for (Map<String, Object> indicator : indicators) {
+            String level = (String) indicator.get("level");
+            if (level != null && levelValues.containsKey(level)) {
+                sum += levelValues.get(level);
+                count++;
+            }
+        }
+
+        if (count == 0) return "E";
+
+        double average = sum / count;
+
+        if (average >= 4.5) return "A";
+        if (average >= 3.5) return "B";
+        if (average >= 2.5) return "C";
+        if (average >= 1.5) return "D";
+        return "E";
     }
 }
