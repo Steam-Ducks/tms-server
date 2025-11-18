@@ -450,68 +450,75 @@ public class RegionIndicatorService {
     }
 
     private String calculateLevel(String indicatorName, Integer value) {
-        if (value == null) return "E";
+        if (value == null) return "5"; // 5 = pior
 
         switch (indicatorName) {
             case "Average Speed":
-                if (value >= 90) return "A";
-                if (value >= 80) return "B";
-                if (value >= 70) return "C";
-                if (value >= 60) return "D";
-                return "E";
+                // Velocidade média - quanto maior melhor
+                if (value >= 90) return "1"; // Excelente
+                if (value >= 80) return "2"; // Bom
+                if (value >= 70) return "3"; // Regular
+                if (value >= 60) return "4"; // Ruim
+                return "5";                 // Péssimo
 
             case "Compliance Rate":
-                if (value >= 95) return "A";
-                if (value >= 85) return "B";
-                if (value >= 75) return "C";
-                if (value >= 65) return "D";
-                return "E";
+                // Taxa de conformidade - quanto maior melhor
+                if (value >= 95) return "1"; // Excelente
+                if (value >= 85) return "2"; // Bom
+                if (value >= 75) return "3"; // Regular
+                if (value >= 65) return "4"; // Ruim
+                return "5";                 // Péssimo
 
             case "Traffic Density":
-                if (value <= 20) return "A";
-                if (value <= 40) return "B";
-                if (value <= 60) return "C";
-                if (value <= 80) return "D";
-                return "E";
+                // Densidade de tráfego - quanto menor melhor
+                if (value <= 20) return "1"; // Excelente
+                if (value <= 40) return "2"; // Bom
+                if (value <= 60) return "3"; // Regular
+                if (value <= 80) return "4"; // Ruim
+                return "5";                 // Péssimo
 
             case "Weather":
-                if (value <= 3) return "A";
-                if (value <= 20) return "B";
-                if (value <= 60) return "C";
-                if (value <= 80) return "D";
-                return "E";
+                // Códigos climáticos - quanto menor melhor
+                if (value <= 3) return "1";  // Excelente (claro/ensolarado)
+                if (value <= 20) return "2"; // Bom (parcialmente nublado)
+                if (value <= 60) return "3"; // Regular (chuva leve)
+                if (value <= 80) return "4"; // Ruim (chuva forte)
+                return "5";                 // Péssimo (condições severas)
 
             default:
-                return "E";
+                return "5"; // Padrão = pior
         }
     }
 
     private String calculateOverallLevel(List<Map<String, Object>> indicators) {
-        if (indicators == null || indicators.isEmpty()) return "E";
-
-        Map<String, Integer> levelValues = Map.of(
-                "A", 5, "B", 4, "C", 3, "D", 2, "E", 1
-        );
+        if (indicators == null || indicators.isEmpty()) return "5";
 
         double sum = 0;
         int count = 0;
 
         for (Map<String, Object> indicator : indicators) {
             String level = (String) indicator.get("level");
-            if (level != null && levelValues.containsKey(level)) {
-                sum += levelValues.get(level);
-                count++;
+            if (level != null) {
+                try {
+                    int levelValue = Integer.parseInt(level);
+                    sum += levelValue;
+                    count++;
+                } catch (NumberFormatException e) {
+                    sum += 5;
+                    count++;
+                }
             }
         }
 
-        if (count == 0) return "E";
+        if (count == 0) return "5";
 
         double average = sum / count;
 
-        if (average >= 4.5) return "A";
-        if (average >= 3.5) return "B";
-        if (average >= 2.5) return "C";
-        if (average >= 1.5) return "D";
-        return "E";
+        int overallLevel = (int) Math.round(average);
+
+        // Garantir que fique entre 1 e 5
+        overallLevel = Math.max(1, Math.min(5, overallLevel));
+
+        return String.valueOf(overallLevel);
     }
 }
