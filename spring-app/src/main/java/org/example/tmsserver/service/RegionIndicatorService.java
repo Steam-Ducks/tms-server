@@ -15,12 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.OffsetDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class RegionIndicatorService {
@@ -392,5 +388,137 @@ public class RegionIndicatorService {
         }
 
         return statusMap;
+    }
+
+    public Map<String, Object> getIndicatorsByRegion(String regionName) {
+        List<RegionIndicatorDTO> indicators = regionIndicatorRepository.findLatestIndicatorsByRegion(regionName);
+
+        // Enriquecer os dados com level e change
+        List<Map<String, Object>> enrichedIndicators = indicators.stream()
+                .map(dto -> {
+                    Map<String, Object> enriched = new HashMap<>();
+                    enriched.put("indicatorName", dto.getIndicatorName());
+                    enriched.put("value", dto.getAverageValue() != null ?
+                            dto.getAverageValue().intValue() : null);
+                    enriched.put("level", calculateLevel(dto.getIndicatorName(),
+                            dto.getAverageValue() != null ? dto.getAverageValue().intValue() : null));
+                    enriched.put("change", regionIndicatorRepository.findLatestChangeByRegionAndIndicator(
+                            regionName, dto.getIndicatorName()));
+                    return enriched;
+                })
+                .collect(Collectors.toList());
+
+        String overallLevel = calculateOverallLevel(enrichedIndicators);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("region", regionName);
+        result.put("overallLevel", overallLevel);
+        result.put("indicators", enrichedIndicators);
+
+        return result;
+    }
+
+    public Map<String, Object> getAllRegionsWithIndicators() {
+        List<String> regionNames = regionIndicatorRepository.findAllRegionNames();
+        Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> regionsData = new ArrayList<>();
+
+        for (String regionName : regionNames) {
+            Map<String, Object> regionData = getIndicatorsByRegion(regionName);
+            regionsData.add(regionData);
+        }
+
+        result.put("regions", regionsData);
+        return result;
+    }
+
+    public List<Map<String, String>> getRegionsSummary() {
+        List<String> regionNames = regionIndicatorRepository.findAllRegionNames();
+        List<Map<String, String>> summary = new ArrayList<>();
+
+        for (String regionName : regionNames) {
+            Map<String, Object> regionData = getIndicatorsByRegion(regionName);
+
+            Map<String, String> regionSummary = new HashMap<>();
+            regionSummary.put("region", regionName);
+            regionSummary.put("level", (String) regionData.get("overallLevel"));
+
+            summary.add(regionSummary);
+        }
+
+        return summary;
+    }
+
+    private String calculateLevel(String indicatorName, Integer value) {
+        if (value == null) return "5"; // 5 = pior
+
+        switch (indicatorName) {
+            case "Average Speed":
+                // Velocidade média - quanto maior melhor
+                if (value >= 90) return "1"; // Excelente
+                if (value >= 80) return "2"; // Bom
+                if (value >= 70) return "3"; // Regular
+                if (value >= 60) return "4"; // Ruim
+                return "5";                 // Péssimo
+
+            case "Compliance Rate":
+                // Taxa de conformidade - quanto maior melhor
+                if (value >= 95) return "1"; // Excelente
+                if (value >= 85) return "2"; // Bom
+                if (value >= 75) return "3"; // Regular
+                if (value >= 65) return "4"; // Ruim
+                return "5";                 // Péssimo
+
+            case "Traffic Density":
+                // Densidade de tráfego - quanto menor melhor
+                if (value <= 20) return "1"; // Excelente
+                if (value <= 40) return "2"; // Bom
+                if (value <= 60) return "3"; // Regular
+                if (value <= 80) return "4"; // Ruim
+                return "5";                 // Péssimo
+
+            case "Weather":
+                // Códigos climáticos - quanto menor melhor
+                if (value <= 3) return "1";  // Excelente (claro/ensolarado)
+                if (value <= 20) return "2"; // Bom (parcialmente nublado)
+                if (value <= 60) return "3"; // Regular (chuva leve)
+                if (value <= 80) return "4"; // Ruim (chuva forte)
+                return "5";                 // Péssimo (condições severas)
+
+            default:
+                return "5"; // Padrão = pior
+        }
+    }
+
+    private String calculateOverallLevel(List<Map<String, Object>> indicators) {
+        if (indicators == null || indicators.isEmpty()) return "5";
+
+        double sum = 0;
+        int count = 0;
+
+        for (Map<String, Object> indicator : indicators) {
+            String level = (String) indicator.get("level");
+            if (level != null) {
+                try {
+                    int levelValue = Integer.parseInt(level);
+                    sum += levelValue;
+                    count++;
+                } catch (NumberFormatException e) {
+                    sum += 5;
+                    count++;
+                }
+            }
+        }
+
+        if (count == 0) return "5";
+
+        double average = sum / count;
+
+        int overallLevel = (int) Math.round(average);
+
+        // Garantir que fique entre 1 e 5
+        overallLevel = Math.max(1, Math.min(5, overallLevel));
+
+        return String.valueOf(overallLevel);
     }
 }
