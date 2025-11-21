@@ -1,14 +1,15 @@
 package org.example.tmsserver.service;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 import org.example.tmsserver.dto.ZoneLevelDTO;
+import org.example.tmsserver.dto.WorstStreetByRegionDTO;
 import org.example.tmsserver.entity.Level;
 import org.example.tmsserver.entity.Region;
 import org.example.tmsserver.entity.RegionIndicator;
@@ -66,16 +67,13 @@ public class LevelService {
 
             Integer latestWeatherCode = getLatestWeatherCodeForRegion(regionId);
 
-            // Get camera data for this region
             List<Object[]> cameraData = cameraRepository.findCamerasWithStatsForRegion(regionId);
 
-            // Group cameras by base ID (remove _1, _2, etc. suffixes) and aggregate their speeds
             Map<String, List<Object[]>> groupedCameras = cameraData.stream()
-                .collect(Collectors.groupingBy(row -> {
-                    String cameraId = row[0] != null ? row[0].toString() : "";
-                    // Remove suffix like _1, _2, _3, etc.
-                    return cameraId.replaceAll("_\\d+$", "");
-                }));
+                    .collect(Collectors.groupingBy(row -> {
+                        String cameraId = row[0] != null ? row[0].toString() : "";
+                        return cameraId.replaceAll("_\\d+$", "");
+                    }));
 
             List<Map<String, Object>> cameras = groupedCameras.entrySet().stream().map(entry -> {
                 String baseCameraId = entry.getKey();
@@ -83,19 +81,17 @@ public class LevelService {
 
                 Map<String, Object> cameraMap = new HashMap<>();
 
-                // Use data from the first camera in the group for static fields
                 Object[] firstCamera = cameraGroup.get(0);
                 java.math.BigDecimal latitude = firstCamera[1] != null ? (java.math.BigDecimal) firstCamera[1] : null;
                 java.math.BigDecimal longitude = firstCamera[2] != null ? (java.math.BigDecimal) firstCamera[2] : null;
                 String address = firstCamera[3] != null ? firstCamera[3].toString() : null;
                 Integer speedLimit = firstCamera[4] != null ? ((Number) firstCamera[4]).intValue() : null;
 
-                // Calculate average speed across all cameras in the group
                 Double avgSpeed = cameraGroup.stream()
-                    .filter(row -> row[5] != null)
-                    .mapToDouble(row -> ((Number) row[5]).doubleValue())
-                    .average()
-                    .orElse(0.0);
+                        .filter(row -> row[5] != null)
+                        .mapToDouble(row -> ((Number) row[5]).doubleValue())
+                        .average()
+                        .orElse(0.0);
 
                 cameraMap.put("id", baseCameraId);
                 cameraMap.put("latitude", latitude);
@@ -117,10 +113,84 @@ public class LevelService {
         }).collect(Collectors.toList());
     }
 
+    // NOVO MÉTODO: PIOR RUA
+    // ----------------------------------------------------------------------------------
+
+    public List<WorstStreetByRegionDTO> getWorstStreetsByRegion() {
+
+        List<Level> latestLevels = levelRepository.findTop6ByOrderByTimeDesc();
+
+        return latestLevels.stream().map(level -> {
+
+            Integer regionId = level.getRegion().getIdRegion();
+            String regionName = level.getRegion().getName();
+            Integer regionLevel = level.getValue();
+
+            List<Object[]> cameraData = cameraRepository.findCamerasWithStatsForRegion(regionId);
+
+            // se não houver câmeras para a região → ainda retorna a região
+            if (cameraData == null || cameraData.isEmpty()) {
+                return new WorstStreetByRegionDTO(
+                        String.valueOf(regionId),
+                        regionName,
+                        regionLevel,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                );
+            }
+
+            // agrupa por id base (rua)
+            Map<String, List<Object[]>> grouped = cameraData.stream()
+                    .collect(Collectors.groupingBy(row ->
+                            row[0].toString().replaceAll("_\\d+$", "")
+                    ));
+
+            // calcula severidade por rua
+            List<WorstStreetByRegionDTO> streets = grouped.entrySet().stream().map(e -> {
+
+                String streetId = e.getKey();
+                List<Object[]> group = e.getValue();
+
+                Object[] first = group.get(0);
+                String address = first[3] != null ? first[3].toString() : null;
+                Integer speedLimit = first[4] != null ? ((Number) first[4]).intValue() : null;
+
+                double avgSpeed = group.stream()
+                        .filter(c -> c[5] != null)
+                        .mapToDouble(c -> ((Number) c[5]).doubleValue())
+                        .average()
+                        .orElse(0.0);
+
+                double severity = speedLimit != null ? (speedLimit - avgSpeed) : 0.0;
+
+                return new WorstStreetByRegionDTO(
+                        String.valueOf(regionId),
+                        regionName,
+                        regionLevel,
+                        streetId,
+                        address,
+                        Math.round(avgSpeed * 100.0) / 100.0,
+                        speedLimit,
+                        Math.round(severity * 100.0) / 100.0
+                );
+
+            }).collect(Collectors.toList());
+
+            // retorna apenas a pior rua
+            return streets.stream()
+                    .max(Comparator.comparingDouble(WorstStreetByRegionDTO::getSeverity))
+                    .orElse(null);
+
+        }).collect(Collectors.toList());
+    }
+
     private Integer getLatestWeatherCodeForRegion(Integer regionId) {
         try {
             Optional<org.example.tmsserver.entity.Indicator> weatherIndicatorOpt =
-                indicatorRepository.findByName("Weather");
+                    indicatorRepository.findByName("Weather");
 
             if (weatherIndicatorOpt.isEmpty()) {
                 logger.warn("Weather indicator not found in database");
@@ -128,7 +198,7 @@ public class LevelService {
             }
 
             List<RegionIndicator> weatherIndicators = regionIndicatorRepository
-                .findByRegionIdRegionAndIndicatorOrderByTimeDesc(regionId, weatherIndicatorOpt.get());
+                    .findByRegionIdRegionAndIndicatorOrderByTimeDesc(regionId, weatherIndicatorOpt.get());
 
             if (!weatherIndicators.isEmpty()) {
                 Integer weatherCode = weatherIndicators.get(0).getValue();
@@ -146,28 +216,15 @@ public class LevelService {
 
     @Transactional
     public void calculateLevelsForAllRegions() {
-        logger.info("=== Início do cálculo de níveis para todas as regiões ===");
-
         List<Region> allRegions = regionRepository.findAll();
-        logger.info("Total de regiões encontradas: {}", allRegions.size());
 
         for (Region region : allRegions) {
-            try {
-                logger.info("Calculando nível para região: {} (ID: {})", region.getName(), region.getIdRegion());
-                calculateLevelForRegion(region.getIdRegion());
-            } catch (Exception e) {
-                logger.error("Erro ao calcular nível para região ID {}: {}", region.getIdRegion(), e.getMessage());
-            }
+            calculateLevelForRegion(region.getIdRegion());
         }
-
-        logger.info("=== Fim do cálculo de níveis para todas as regiões ===");
     }
 
     @Transactional
     public Level calculateLevelForRegion(Integer regionId) {
-
-        logger.info("=== Início do cálculo de nível para região ID: {} ===", regionId);
-        System.out.println("DEBUG: Recebido regionId -> " + regionId);
 
         List<IndicatorCalculator> calculators = List.of(
                 new AverageSpeedCalculator(),
@@ -176,7 +233,8 @@ public class LevelService {
                 new WeatherCalculator()
         );
 
-        List<RegionIndicator> regionIndicators = regionIndicatorRepository.findValuesByRegion(regionId, countIndicators());
+        List<RegionIndicator> regionIndicators =
+                regionIndicatorRepository.findValuesByRegion(regionId, countIndicators());
 
         Map<String, Integer> indicatorLevels = new HashMap<>();
 
@@ -187,22 +245,15 @@ public class LevelService {
                     .orElse(null);
 
             if (ri != null) {
-                indicatorLevels.put(calculator.getIndicatorName(), calculator.mapValueToLevel(ri.getValue()));
-            } else {
-                logger.warn("Indicador {} não encontrado para a região {}", calculator.getIndicatorName(), regionId);
+                indicatorLevels.put(calculator.getIndicatorName(),
+                        calculator.mapValueToLevel(ri.getValue()));
             }
         }
 
         int levelValue = accumulateLevel(indicatorLevels);
-        logger.info("Nível determinado: {}", levelValue);
 
         Region region = regionRepository.findById(regionId)
-                .orElseThrow(() -> {
-                    logger.error("Região não encontrada para ID {}", regionId);
-                    return new IllegalArgumentException("Região não encontrada");
-                });
-
-        logger.info("Região encontrada: {}", region.getName());
+                .orElseThrow(() -> new IllegalArgumentException("Região não encontrada"));
 
         Level level = new Level();
         level.setValue(levelValue);
@@ -210,11 +261,9 @@ public class LevelService {
         level.setRegion(region);
 
         Level savedLevel = levelRepository.save(level);
-        logger.info("Level salvo com sucesso: {}", savedLevel);
 
         checkAndTriggerAlerts(region, levelValue);
 
-        logger.info("Fim do cálculo de nível para região ID: {}", regionId);
         return savedLevel;
     }
 
@@ -231,10 +280,10 @@ public class LevelService {
             totalWeight += weight;
         }
 
-        double weightedAverage = totalWeight > 0 ? weightedSum / totalWeight : 0.0;
+        double result = totalWeight > 0 ? weightedSum / totalWeight : 0.0;
 
-        int floor = (int) Math.floor(weightedAverage);
-        double decimal = weightedAverage - floor;
+        int floor = (int) Math.floor(result);
+        double decimal = result - floor;
 
         return (decimal < 0.4) ? floor : floor + 1;
     }
@@ -255,12 +304,13 @@ public class LevelService {
     }
 
     private void checkAndTriggerAlerts(Region region, int levelValue) {
-        if (levelValue == 4 || levelValue == 5) {
-            String severity = getSeverityDescription(levelValue);
-            String description = getLevelDescription(levelValue);
-
-            logger.warn("Nível crítico detectado! Região: {}, Nível: {}", region.getName(), levelValue);
-            alertMonitorService.sendCriticalAlert(region, levelValue, severity, description);
+        if (levelValue >= 4) {
+            alertMonitorService.sendCriticalAlert(
+                    region,
+                    levelValue,
+                    getSeverityDescription(levelValue),
+                    getLevelDescription(levelValue)
+            );
         }
     }
 
