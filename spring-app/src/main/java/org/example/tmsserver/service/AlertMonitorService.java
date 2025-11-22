@@ -10,6 +10,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class AlertMonitorService {
@@ -18,6 +19,7 @@ public class AlertMonitorService {
     private final TelegramService telegramService;
 
     private final Map<Integer, LocalDateTime> lastAlertTimeByRegion = new HashMap<>();
+    private final Map<Integer, Integer> lastSentLevelByRegion = new HashMap<>();
 
     public AlertMonitorService(TelegramPollingBot telegramBot,
                                UserRepository userRepository,
@@ -31,14 +33,16 @@ public class AlertMonitorService {
         System.out.println("🔥 DEBUG: AlertMonitorService.sendCriticalAlert chamado");
         System.out.println("🔥 DEBUG: Região: " + region.getName() + ", Nível: " + level);
 
-        if (shouldSendAlert(region.getIdRegion())) {
+        if (shouldSendAlert(region.getIdRegion(), level)) {
             System.out.println("🔥 DEBUG: Deve enviar alerta - passou no controle de spam");
 
             String alertMessage = buildCriticalAlertMessage(region, level, severity, description);
             System.out.println("🔥 DEBUG: Mensagem construída: " + alertMessage);
 
             telegramBot.sendAlertForRegion(region, alertMessage);
+
             lastAlertTimeByRegion.put(region.getIdRegion(), LocalDateTime.now());
+            lastSentLevelByRegion.put(region.getIdRegion(), level);
 
             System.out.println("✅ DEBUG: Alerta crítico processado para região: " + region.getName());
         } else {
@@ -112,11 +116,16 @@ public class AlertMonitorService {
         System.out.println("TESTE: " + testMessage + " para chatId: " + chatId);
     }
 
-    private boolean shouldSendAlert(Integer regionId) {
+    private boolean shouldSendAlert(Integer regionId, Integer newLevel) {
         LocalDateTime lastAlert = lastAlertTimeByRegion.get(regionId);
+        Integer lastLevel = lastSentLevelByRegion.get(regionId);
+
         if (lastAlert == null) return true;
+
         LocalDateTime now = LocalDateTime.now();
-        return lastAlert.plusMinutes(5).isBefore(now);
+
+        return lastAlert.plusMinutes(5).isBefore(now) && (lastLevel == null || !Objects.equals(lastLevel, newLevel));
+
     }
 
     private String buildCriticalAlertMessage(Region region, int level, String severity, String description) {
