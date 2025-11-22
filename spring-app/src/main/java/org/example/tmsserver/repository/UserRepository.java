@@ -15,10 +15,10 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     List<User> findByRole(Role role);
     Optional<User> findByUsername(String username);
-    Optional<User> findByTelegramToken(String token);
     Optional<User> findByEmail(String email);
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
     boolean existsByPhoneNumber(String phoneNumber);
+    Optional<User> findByTelegramId(Integer telegramId);
 
 }
