@@ -6,6 +6,7 @@ import org.example.tmsserver.entity.User;
 import org.example.tmsserver.repository.RegionRepository;
 import org.example.tmsserver.repository.RoleRepository;
 import org.example.tmsserver.repository.UserRepository;
+import org.example.tmsserver.service.AlertService;
 import org.example.tmsserver.service.TelegramService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -21,6 +22,7 @@ public class TelegramPollingBot extends TelegramLongPollingBot {
     private final RoleRepository roleRepository;
     private final RegionRepository regionRepository;
     private final TelegramService telegramService;
+    private final AlertService alertService;
     private final String botToken;
     private final String botUsername;
 
@@ -29,7 +31,8 @@ public class TelegramPollingBot extends TelegramLongPollingBot {
                               UserRepository userRepository,
                               RoleRepository roleRepository,
                               RegionRepository regionRepository,
-                              TelegramService telegramService) {
+                              TelegramService telegramService,
+                              AlertService alertService) {
         super(botToken);
         this.botToken = botToken;
         this.botUsername = botUsername;
@@ -37,6 +40,7 @@ public class TelegramPollingBot extends TelegramLongPollingBot {
         this.roleRepository = roleRepository;
         this.regionRepository = regionRepository;
         this.telegramService = telegramService;
+        this.alertService = alertService;
         System.out.println("🚀 TelegramPollingBot inicializado com sucesso!");
         System.out.println("🤖 Bot Username: " + botUsername);
     }
@@ -181,6 +185,7 @@ public class TelegramPollingBot extends TelegramLongPollingBot {
 
             int usersNotified = 0;
             int totalUsers = 0;
+            int alertsCreated = 0;
 
             for (Role role : roles) {
                 List<User> users = userRepository.findByRole(role);
@@ -191,6 +196,12 @@ public class TelegramPollingBot extends TelegramLongPollingBot {
                         System.out.println("📤 Enviando alerta para: " + user.getUsername() +
                                 " (chatId: " + user.getChatId() + ")");
                         telegramService.sendMessage(user.getChatId(), alertMessage);
+
+                        // Create alert record in database
+                        alertService.createAlert(region, user);
+                        alertsCreated++;
+                        System.out.println("💾 Alerta registrado no banco de dados para: " + user.getUsername());
+
                         usersNotified++;
                     } else {
                         System.out.println("⏭️  Pulando usuário " + user.getUsername() + " - chatId não configurado");
@@ -200,6 +211,7 @@ public class TelegramPollingBot extends TelegramLongPollingBot {
 
             System.out.println("📊 RESUMO DO ALERTA:");
             System.out.println("✅ Usuários notificados: " + usersNotified);
+            System.out.println("💾 Alertas criados no banco: " + alertsCreated);
             System.out.println("📋 Total de usuários na região: " + totalUsers);
             System.out.println("📍 Região: " + region.getName());
 
