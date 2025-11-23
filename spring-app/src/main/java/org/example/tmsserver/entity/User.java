@@ -110,11 +110,11 @@ public class User {
     public void setEnabled(Boolean enabled) { this.enabled = enabled; }
 
 
-    public Integer getTelegramToken() {
+    public Integer getTelegramId() {
         return telegramId;
     }
 
-    public void setTelegramToken(Integer telegramId) {
+    public void setTelegramId(Integer telegramId) {
         this.telegramId = telegramId;
     }
 }
