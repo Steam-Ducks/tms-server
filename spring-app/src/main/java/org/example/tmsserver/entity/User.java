@@ -36,8 +36,8 @@ public class User {
     @Column(name= "chat_id", nullable = true)
     private Long chatId;
 
-    @Column(name="telegram_token", nullable = true)
-    private String telegramToken;
+    @Column(name="telegram_id", nullable = true)
+    private Integer telegramId;
 
     @Column(name = "enabled", nullable = false)
     private Boolean enabled = true;
@@ -45,7 +45,7 @@ public class User {
     public User() {
     }
 
-    public User(Integer id, Role role, String email, String phoneNumber, String username, String password, Long chatId, String telegramToken, Boolean enabled) {
+    public User(Integer id, Role role, String email, String phoneNumber, String username, String password, Long chatId, Integer telegramId, Boolean enabled) {
         this.id = id;
         this.role = role;
         this.email = email;
@@ -53,7 +53,7 @@ public class User {
         this.username = username;
         this.password = password;
         this.chatId = chatId;
-        this.telegramToken = telegramToken;
+        this.telegramId = telegramId;
         this.enabled = enabled;
     }
 
@@ -110,11 +110,11 @@ public class User {
     public void setEnabled(Boolean enabled) { this.enabled = enabled; }
 
 
-    public String getTelegramToken() {
-        return telegramToken;
+    public Integer getTelegramId() {
+        return telegramId;
     }
 
-    public void setTelegramToken(String telegramToken) {
-        this.telegramToken = telegramToken;
+    public void setTelegramId(Integer telegramId) {
+        this.telegramId = telegramId;
     }
 }
