@@ -19,7 +19,7 @@ public class JwtUtil {
     @Value("${security.jwt.secret}")
     private String secret;
 
-    // TEmpo para expirar o token em segundos (3600 = 1 hora)
+        // TEmpo para expirar o token em segundos (3600 = 1 hora)
     @Value("${security.jwt.expiration-seconds:3600}")
     private long expirationSeconds;
 
